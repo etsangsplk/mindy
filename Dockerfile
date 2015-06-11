@@ -17,11 +17,11 @@ RUN cd /etc/service && ln -sf /etc/tinydns
 
 ## Install mindy
 RUN apt-get install -y libgmp3-dev
-ENV repo $GOPATH/src/github.com/eris-ltd/mint-client/
+ENV repo $GOPATH/src/github.com/eris-ltd/mindy
 RUN mkdir -p $repo
 COPY . $repo/
 WORKDIR $repo
-RUN go install ./mindy
+RUN go install
 
 COPY start.sh /
 RUN chmod 755 /start.sh

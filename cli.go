@@ -1,15 +1,15 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
-	"encoding/json"
 
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
+	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/spf13/cobra"
+	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 )
 
 func validateDNSEntrySimple(entry *types.NameRegEntry) error {
@@ -37,10 +37,10 @@ func validateDNSEntryRR(entry *types.NameRegEntry) (*ResourceRecord, error) {
 	}*/
 
 	rr := new(ResourceRecord)
-	if err := json.Unmarshal([]byte(entry.Data), rr); err != nil{
+	if err := json.Unmarshal([]byte(entry.Data), rr); err != nil {
 		return nil, err
 	}
-	
+
 	spl = strings.Split(rr.Address, ".")
 	if len(spl) != 4 {
 		return nil, fmt.Errorf("Address must be a valid ipv4 address")
@@ -113,7 +113,6 @@ func addTinyDNSARecord(fqdn, addr string) error {
 	return nil
 }
 
-
 func addTinyDNSNSRecord(fqdn, addr string) error {
 	fmt.Println("Running add ns", fqdn, addr, "...")
 	cmd := exec.Command("./add-ns", fqdn, addr)
@@ -158,14 +157,14 @@ func fetchAndUpdateRecords(dnsData TinyDNSData) {
 
 		if toUpdate {
 			anyUpdates = true
-			switch rr.Type{
-				case "NS":
-					addTinyDNSNSRecord(name, addr)
-				case "A":
-					addTinyDNSARecord(name, addr)
-				default:
-					fmt.Println("Found Resource Record with unknown type", rr.Type)
-					continue
+			switch rr.Type {
+			case "NS":
+				addTinyDNSNSRecord(name, addr)
+			case "A":
+				addTinyDNSARecord(name, addr)
+			default:
+				fmt.Println("Found Resource Record with unknown type", rr.Type)
+				continue
 			}
 			dnsData[name] = rr
 		}

@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/spf13/cobra"
+	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/spf13/cobra"
 	"os"
 	"path"
 
-	cclient "github.com/eris-ltd/mint-client/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core_client"
+	cclient "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core_client"
 )
 
 var (
