@@ -1,0 +1,12 @@
+tinydns:
+  build: .
+  ports:
+   - "53:53/udp"
+   - ~/.tinydns:/etc/tinydns
+mint:
+  build: ./tendermint
+  port:
+    - "46656:46656"
+    - "46657:46657"
+  volumes:
+    - ~/.tendermint:/tendermint_root
