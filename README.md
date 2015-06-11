@@ -1,0 +1,2 @@
+# mindy
+tinydns + tendermint = love
