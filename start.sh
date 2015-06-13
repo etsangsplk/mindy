@@ -1,9 +1,5 @@
 #! /bin/bash
 
-## Start the tinydns server
-cd /etc/service
-svscan &
-
 # download dns entries from blockchain
 mindy catchup
 

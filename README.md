@@ -1,26 +1,9 @@
-# mint-client
-Command line interfaces for low-level conversations with tendermint chains
+# mindy
 
-mintx
------
+Mindy extends djb's tinydns by updating the zone file with records fetched from a blockchain 
 
-For crafting transactions, getting them signed, and broadcasting them to a node
-
-mintinfo
---------
-
-For making RPC calls to a node and parsing responses
-
-mindy
--------
-
-Mindy extends djb's tinydns to fetch records off the blockchain and update tinydns' data file. 
-
-
-Walkabout
+Updating dns records with blockchain transactions:
 ---------
-
-Let's use these tools to register a real domain name against the blockchain!
 
 First thing we need the `eris-keys` daemon to generate private keys and handle signing.
 
@@ -97,4 +80,14 @@ mintx name --name newdomain.io --data '{"fqdn":"newdomain.io", "address":"4.3.2.
 
 Of course this will only work with the real DNS system if you own the domain `newdomain.io`, and you tell your registrar to point at your own nameservers (presumably `4.3.2.1`). Then just run our docker container and you'll be serving DNS straight from the blockchain!
 
+# Run the containers yourself
 
+A full mindy node uses 4 containers: one for each of tendermint, tendermint's data, tinydns, and mindy. They can be used all together 
+or in varying combinations. See the `tendermint` and `tinydns` sub-directories for details on running those containers.
+
+Once tinydns and tendermint are running, 
+
+```
+docker build -t mindy .
+docker run -d --name mindy --volumes-from tinydns mindy 
+```
