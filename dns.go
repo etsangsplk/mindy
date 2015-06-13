@@ -7,17 +7,41 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"bytes"
 
 	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 )
 
-type TinyDNSData map[string]*ResourceRecord
+// there may be multiple records for a single domain name
+type TinyDNSData map[string][]*ResourceRecord
 
 // the json we expect to see in blockchain's namereg
 type ResourceRecord struct {
 	Type    string `json:"type"`
 	FQDN    string `json:"fqdn"`
 	Address string `json:"address"`
+}
+
+func (rr *ResourceRecord) Equals (r *ResourceRecord) bool{
+	return rr.Type == r.Type && rr.FQDN == r.FQDN && rr.Address == r.Address
+}
+
+// TODO: something better
+func RecordsEqual (r1 []*ResourceRecord, r2 []*ResourceRecord) bool{
+	
+	for _, rr1 := range r1{
+		eq := false
+		for _, rr2 := range r2{
+			if rr1.Equals(rr2){
+				eq = true
+				break
+			}
+		}
+		if !eq{
+			return false
+		}
+	}
+	return true
 }
 
 // read tinydns data from file
@@ -28,7 +52,7 @@ func TinyDNSDataFromFile(file string) (TinyDNSData, error) {
 		return nil, err
 	}
 
-	tinydnsData := make(map[string]*ResourceRecord)
+	tinydnsData := make(map[string][]*ResourceRecord)
 	dataLines := strings.Split(string(b), "\n")
 	for _, line := range dataLines {
 		line = strings.TrimSpace(line)
@@ -50,7 +74,14 @@ func TinyDNSDataFromFile(file string) (TinyDNSData, error) {
 		default:
 			return nil, fmt.Errorf("Unknown first character in tinydns data: %s", first)
 		}
-		tinydnsData[name] = &ResourceRecord{typ, name, ip}
+		newRecord := &ResourceRecord{typ, name, ip}
+		rrs, ok := tinydnsData[name]
+		if ok {
+			rrs = append(rrs, newRecord)
+		} else {
+			rrs = []*ResourceRecord{newRecord}
+		}
+		tinydnsData[name] = rrs
 	}
 	return tinydnsData, nil
 }
@@ -68,8 +99,8 @@ func validateDNSEntrySimple(entry *types.NameRegEntry) error {
 	return nil
 }
 
-// checks if entry is json ResourceRecord and has a valid address
-func validateDNSEntryRR(entry *types.NameRegEntry) (*ResourceRecord, error) {
+// an entry is valid if it is a json encoded single or list of ResourceRecords
+func validateDNSEntryRR(entry *types.NameRegEntry) ([]*ResourceRecord, error) {
 	spl := strings.Split(entry.Name, ".")
 	if len(spl) < 2 {
 		return nil, fmt.Errorf("A valid name must have at least a host name, and tld")
@@ -82,28 +113,34 @@ func validateDNSEntryRR(entry *types.NameRegEntry) (*ResourceRecord, error) {
 			return nil, err
 		}*/
 
-	rr := new(ResourceRecord)
-	if err := json.Unmarshal([]byte(entry.Data), rr); err != nil {
-		return nil, err
+	rrl := []*ResourceRecord{}
+	if err := json.Unmarshal([]byte(entry.Data), &rrl); err != nil {
+		rr := new(ResourceRecord)
+		if err2 := json.Unmarshal([]byte(entry.Data), rr); err2 != nil{
+			return nil, err
+		}
+		rrl = []*ResourceRecord{rr}
 	}
 
-	spl = strings.Split(rr.Address, ".")
-	if len(spl) != 4 {
-		return nil, fmt.Errorf("Address must be a valid ipv4 address")
+	for _, rr := range rrl{
+		spl = strings.Split(rr.Address, ".")
+		if len(spl) != 4 {
+			return nil, fmt.Errorf("Address must be a valid ipv4 address. Got %s", rr.Address)
+		}
 	}
-	return rr, nil
+	return rrl, nil
 }
 
 // grab all dns records from the blockchain
-func getDNSRecords() ([]*ResourceRecord, error) {
+func getDNSRecords() (map[string][]*ResourceRecord, error) {
 	r, err := client.ListNames()
 	if err != nil {
 		return nil, err
 	}
-	dnsEntries := []*ResourceRecord{}
+	dnsEntries := make(map[string][]*ResourceRecord)
 	for _, entry := range r.Names {
-		if rr, err := validateDNSEntryRR(entry); err == nil {
-			dnsEntries = append(dnsEntries, rr)
+		if rrl, err := validateDNSEntryRR(entry); err == nil {
+			dnsEntries[entry.Name] = rrl
 		} else {
 			fmt.Println("... invalid dns entry", entry.Name, entry.Data, err)
 		}
@@ -111,8 +148,10 @@ func getDNSRecords() ([]*ResourceRecord, error) {
 	return dnsEntries, nil
 }
 
-// grab all records from chain and make any updates
-func fetchAndUpdateRecords(dnsData TinyDNSData) {
+// grab all records from chain and re-write the data file
+// this is the simplest approach until we index the data file
+// and subscribe to chain events
+func fetchAndUpdateRecords() {
 	// get all dns entries from chain
 	dnsRecords, err := getDNSRecords()
 	if err != nil {
@@ -120,39 +159,41 @@ func fetchAndUpdateRecords(dnsData TinyDNSData) {
 		return
 	}
 
-	anyUpdates := false
-	for _, rr := range dnsRecords {
-		name, addr := rr.FQDN, rr.Address
-		record, ok := dnsData[name]
+	buf := new(bytes.Buffer)
 
-		toUpdate := true
-		// if we have it and nothings changed, don't update
-		if ok && record.FQDN == name && record.Address == addr {
-			toUpdate = false
-		}
-
-		if toUpdate {
-			anyUpdates = true
-			switch rr.Type {
+	for _, chainRecord := range dnsRecords {
+		addedHost := false
+		// a single name may have multiple records
+		for _, record := range chainRecord{
+			name, addr := record.FQDN, record.Address
+			switch record.Type {
 			case "NS":
-				addTinyDNSNSRecord(name, addr)
+				fmt.Printf("adding NS record for %s:%s\n", name, addr)
+				buf.WriteString(fmt.Sprintf(".%s:%s:86400\n", name, addr))
 			case "A":
-				addTinyDNSARecord(name, addr)
+				if !addedHost{
+					fmt.Printf("adding A record for %s:%s\n", name, addr)
+					buf.WriteString(fmt.Sprintf("=%s:%s:86400\n", name, addr))
+					addedHost = true
+				} else {
+					fmt.Printf("adding A record for %s:%s\n", name, addr)
+					buf.WriteString(fmt.Sprintf("+%s:%s:86400\n", name, addr))
+				}
 			default:
-				fmt.Println("Found Resource Record with unknown type", rr.Type)
+				fmt.Println("Found Resource Record with unknown type", record.Type)
 				continue
 			}
-			dnsData[name] = rr
+
 		}
 	}
 
-	if anyUpdates {
-		// done adding entries. commit them
-		if err = makeTinyDNSRecords(); err != nil {
-			fmt.Println("Error rebuilding data.cdb", err)
-		}
-	} else {
-		fmt.Println("No new updates")
+	if err = ioutil.WriteFile("data", buf.Bytes(), 0644); err != nil{
+		fmt.Println("Error writing data file")
+	}
+
+	// done adding entries. commit them
+	if err = makeTinyDNSRecords(); err != nil {
+		fmt.Println("Error rebuilding data.cdb", err)
 	}
 }
 
