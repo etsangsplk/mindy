@@ -10,8 +10,12 @@ export $VC
 export $FAST_SYNC
 
 # build and run tendermint
-cd $GOPATH/src/github.com/tendermint/tendermint
-./DOCKER/docker.sh
+cd $GOPATH/src/github.com/eris-ltd/mindy
+git submodule init && git submodule update
+cd tendermint/DOCKER
+./docker.sh
+
+exit
 
 # build and run tinydns
 cd $GOPATH/src/github.com/eris-ltd/mindy/tinydns
