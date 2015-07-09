@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	DefaultNodeRPCHost = "pinkpenguin.chaintest.net"
+	DefaultNodeRPCHost = "mint" // expect to be docker linked
 	DefaultNodeRPCPort = "46657"
 	DefaultNodeRPCAddr = "http://" + DefaultNodeRPCHost + ":" + DefaultNodeRPCPort
 
@@ -22,6 +22,13 @@ var (
 	REQUEST_TYPE = "JSONRPC"
 	client       cclient.Client
 )
+
+func init() {
+	if nodeRPCHost := os.Getenv("NODE_RPC_HOST"); nodeRPCHost != "" {
+		DefaultNodeRPCHost = nodeRPCHost
+		DefaultNodeRPCAddr = "http://" + DefaultNodeRPCHost + ":" + DefaultNodeRPCPort
+	}
+}
 
 // flags
 var (

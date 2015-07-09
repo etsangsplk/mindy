@@ -89,5 +89,5 @@ Once tinydns and tendermint are running,
 
 ```
 docker build -t mindy .
-docker run -d --name mindy --volumes-from tinydns mindy 
+docker run -d --name mindy --volumes-from tinydns --link mint:mint mindy 
 ```
