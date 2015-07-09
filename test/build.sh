@@ -9,5 +9,4 @@ docker run --rm -t --link mint:mint --link tinydns:tiny --name mindy_test mindy_
 
 echo "----------------------------------"
 echo "cleanup ..."
-docker stop mindy tinydns mint
-docker rm mindy tinydns mint mintdata
+docker rm -f mindy tinydns mint mintdata
