@@ -10,6 +10,7 @@ export MINTX_SIGN_ADDR="http://localhost:4767"
 export MINTX_CHAINID=mindy_test
 
 # start key daemon
+echo "run the keys daemon ..."
 eris-keys server &
 
 # let the daemon start

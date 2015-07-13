@@ -2,6 +2,8 @@
 
 Mindy extends djb's tinydns by updating the zone file with records fetched from a blockchain 
 
+Run a test mindy on a one man blockchain across four containers with `./test/build.sh`
+
 Updating dns records with blockchain transactions:
 ---------
 
