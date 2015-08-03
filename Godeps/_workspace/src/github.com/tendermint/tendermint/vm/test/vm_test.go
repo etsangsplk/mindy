@@ -10,16 +10,22 @@ import (
 
 	. "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/events"
+	ptypes "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
 	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 	. "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/vm"
 )
 
 func newAppState() *FakeAppState {
-	return &FakeAppState{
+	fas := &FakeAppState{
 		accounts: make(map[string]*Account),
 		storage:  make(map[string]Word256),
 		logs:     nil,
 	}
+	// For default permissions
+	fas.accounts[ptypes.GlobalPermissionsAddress256.String()] = &Account{
+		Permissions: ptypes.DefaultAccountPermissions,
+	}
+	return fas
 }
 
 func newParams() Params {
@@ -43,19 +49,17 @@ func TestVM(t *testing.T) {
 
 	// Create accounts
 	account1 := &Account{
-		Address: Uint64ToWord256(100),
+		Address: Int64ToWord256(100),
 	}
 	account2 := &Account{
-		Address: Uint64ToWord256(101),
+		Address: Int64ToWord256(101),
 	}
 
-	var gas uint64 = 100000
+	var gas int64 = 100000
 	N := []byte{0x0f, 0x0f}
 	// Loop N times
 	code := []byte{0x60, 0x00, 0x60, 0x20, 0x52, 0x5B, byte(0x60 + len(N) - 1)}
-	for i := 0; i < len(N); i++ {
-		code = append(code, N[i])
-	}
+	code = append(code, N...)
 	code = append(code, []byte{0x60, 0x20, 0x51, 0x12, 0x15, 0x60, byte(0x1b + len(N)), 0x57, 0x60, 0x01, 0x60, 0x20, 0x51, 0x01, 0x60, 0x20, 0x52, 0x60, 0x05, 0x56, 0x5B}...)
 	start := time.Now()
 	output, err := ourVm.Call(account1, account2, code, []byte{}, 0, &gas)
@@ -81,7 +85,7 @@ func TestSubcurrency(t *testing.T) {
 
 	ourVm := NewVM(st, newParams(), Zero256, nil)
 
-	var gas uint64 = 1000
+	var gas int64 = 1000
 	code_parts := []string{"620f42403355",
 		"7c0100000000000000000000000000000000000000000000000000000000",
 		"600035046315cf268481141561004657",
@@ -105,13 +109,13 @@ func TestSendCall(t *testing.T) {
 
 	// Create accounts
 	account1 := &Account{
-		Address: Uint64ToWord256(100),
+		Address: Int64ToWord256(100),
 	}
 	account2 := &Account{
-		Address: Uint64ToWord256(101),
+		Address: Int64ToWord256(101),
 	}
 	account3 := &Account{
-		Address: Uint64ToWord256(102),
+		Address: Int64ToWord256(102),
 	}
 
 	// account1 will call account2 which will trigger CALL opcode to account3
@@ -120,6 +124,7 @@ func TestSendCall(t *testing.T) {
 
 	//----------------------------------------------
 	// account2 has insufficient balance, should fail
+	fmt.Println("Should fail with insufficient balance")
 
 	exception := runVMWaitEvents(t, ourVm, account1, account2, addr, contractCode, 1000)
 	if exception == "" {
@@ -137,6 +142,7 @@ func TestSendCall(t *testing.T) {
 
 	//----------------------------------------------
 	// insufficient gas, should fail
+	fmt.Println("Should fail with insufficient gas")
 
 	account2.Balance = 100000
 	exception = runVMWaitEvents(t, ourVm, account1, account2, addr, contractCode, 100)
@@ -145,14 +151,14 @@ func TestSendCall(t *testing.T) {
 	}
 }
 
-// subscribes to an AccReceive, runs the vm, returns the exception
-func runVMWaitEvents(t *testing.T, ourVm *VM, caller, callee *Account, subscribeAddr, contractCode []byte, gas uint64) string {
+// subscribes to an AccCall, runs the vm, returns the exception
+func runVMWaitEvents(t *testing.T, ourVm *VM, caller, callee *Account, subscribeAddr, contractCode []byte, gas int64) string {
 	// we need to catch the event from the CALL to check for exceptions
-	evsw := new(events.EventSwitch)
+	evsw := events.NewEventSwitch()
 	evsw.Start()
 	ch := make(chan interface{})
 	fmt.Printf("subscribe to %x\n", subscribeAddr)
-	evsw.AddListenerForEvent("test", types.EventStringAccReceive(subscribeAddr), func(msg interface{}) {
+	evsw.AddListenerForEvent("test", types.EventStringAccCall(subscribeAddr), func(msg interface{}) {
 		ch <- msg
 	})
 	evc := events.NewEventCache(evsw)

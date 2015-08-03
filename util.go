@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
+	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 	"reflect"
 )
 
 func prettyPrint(o interface{}) (string, error) {
 	var prettyJSON bytes.Buffer
-	err := json.Indent(&prettyJSON, binary.JSONBytes(o), "", "\t")
+	err := json.Indent(&prettyJSON, wire.JSONBytes(o), "", "\t")
 	if err != nil {
 		return "", err
 	}

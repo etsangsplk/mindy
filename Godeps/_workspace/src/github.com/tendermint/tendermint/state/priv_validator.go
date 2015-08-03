@@ -1,7 +1,5 @@
 package state
 
-// TODO: This logic is crude. Should be more transactional.
-
 import (
 	"errors"
 	"fmt"
@@ -9,13 +7,12 @@ import (
 	"math"
 	"sync"
 
-	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
-	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
+	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/ed25519"
+	acm "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	. "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	. "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/consensus/types"
 	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
-
-	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/ed25519"
+	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
 const (
@@ -23,29 +20,27 @@ const (
 	stepPropose   = 1
 	stepPrevote   = 2
 	stepPrecommit = 3
-	stepCommit    = 4
 )
 
-func voteToStep(vote *types.Vote) uint8 {
+func voteToStep(vote *types.Vote) int8 {
 	switch vote.Type {
 	case types.VoteTypePrevote:
 		return stepPrevote
 	case types.VoteTypePrecommit:
 		return stepPrecommit
-	case types.VoteTypeCommit:
-		return stepCommit
 	default:
-		panic("Unknown vote type")
+		PanicSanity("Unknown vote type")
+		return 0
 	}
 }
 
 type PrivValidator struct {
-	Address    []byte                 `json:"address"`
-	PubKey     account.PubKeyEd25519  `json:"pub_key"`
-	PrivKey    account.PrivKeyEd25519 `json:"priv_key"`
-	LastHeight uint                   `json:"last_height"`
-	LastRound  uint                   `json:"last_round"`
-	LastStep   uint8                  `json:"last_step"`
+	Address    []byte             `json:"address"`
+	PubKey     acm.PubKeyEd25519  `json:"pub_key"`
+	PrivKey    acm.PrivKeyEd25519 `json:"priv_key"`
+	LastHeight int                `json:"last_height"`
+	LastRound  int                `json:"last_round"`
+	LastStep   int8               `json:"last_step"`
 
 	// For persistence.
 	// Overloaded for testing.
@@ -58,8 +53,8 @@ func GenPrivValidator() *PrivValidator {
 	privKeyBytes := new([64]byte)
 	copy(privKeyBytes[:32], CRandBytes(32))
 	pubKeyBytes := ed25519.MakePublicKey(privKeyBytes)
-	pubKey := account.PubKeyEd25519(pubKeyBytes[:])
-	privKey := account.PrivKeyEd25519(privKeyBytes[:])
+	pubKey := acm.PubKeyEd25519(*pubKeyBytes)
+	privKey := acm.PrivKeyEd25519(*privKeyBytes)
 	return &PrivValidator{
 		Address:    pubKey.Address(),
 		PubKey:     pubKey,
@@ -74,9 +69,9 @@ func GenPrivValidator() *PrivValidator {
 func LoadPrivValidator(filePath string) *PrivValidator {
 	privValJSONBytes, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		panic(err)
+		Exit(err.Error())
 	}
-	privVal := binary.ReadJSON(&PrivValidator{}, privValJSONBytes, &err).(*PrivValidator)
+	privVal := wire.ReadJSON(&PrivValidator{}, privValJSONBytes, &err).(*PrivValidator)
 	if err != nil {
 		Exit(Fmt("Error reading PrivValidator from %v: %v\n", filePath, err))
 	}
@@ -98,17 +93,16 @@ func (privVal *PrivValidator) Save() {
 
 func (privVal *PrivValidator) save() {
 	if privVal.filePath == "" {
-		panic("Cannot save PrivValidator: filePath not set")
+		PanicSanity("Cannot save PrivValidator: filePath not set")
 	}
-	jsonBytes := binary.JSONBytes(privVal)
+	jsonBytes := wire.JSONBytes(privVal)
 	err := WriteFileAtomic(privVal.filePath, jsonBytes)
 	if err != nil {
 		// `@; BOOM!!!
-		panic(err)
+		PanicCrisis(err)
 	}
 }
 
-// TODO: test
 func (privVal *PrivValidator) SignVote(chainID string, vote *types.Vote) error {
 	privVal.mtx.Lock()
 	defer privVal.mtx.Unlock()
@@ -119,10 +113,6 @@ func (privVal *PrivValidator) SignVote(chainID string, vote *types.Vote) error {
 	}
 	// More cases for when the height matches
 	if privVal.LastHeight == vote.Height {
-		// If attempting any sign after commit, panic
-		if privVal.LastStep == stepCommit {
-			return errors.New("SignVote on matching height after a commit")
-		}
 		// If round regression, panic
 		if privVal.LastRound > vote.Round {
 			return errors.New("Round regression in SignVote")
@@ -145,7 +135,7 @@ func (privVal *PrivValidator) SignVote(chainID string, vote *types.Vote) error {
 }
 
 func (privVal *PrivValidator) SignVoteUnsafe(chainID string, vote *types.Vote) {
-	vote.Signature = privVal.PrivKey.Sign(account.SignBytes(chainID, vote)).(account.SignatureEd25519)
+	vote.Signature = privVal.PrivKey.Sign(acm.SignBytes(chainID, vote)).(acm.SignatureEd25519)
 }
 
 func (privVal *PrivValidator) SignProposal(chainID string, proposal *Proposal) error {
@@ -162,7 +152,7 @@ func (privVal *PrivValidator) SignProposal(chainID string, proposal *Proposal) e
 		privVal.save()
 
 		// Sign
-		proposal.Signature = privVal.PrivKey.Sign(account.SignBytes(chainID, proposal)).(account.SignatureEd25519)
+		proposal.Signature = privVal.PrivKey.Sign(acm.SignBytes(chainID, proposal)).(acm.SignatureEd25519)
 		return nil
 	} else {
 		return errors.New(fmt.Sprintf("Attempt of duplicate signing of proposal: Height %v, Round %v", proposal.Height, proposal.Round))
@@ -175,13 +165,14 @@ func (privVal *PrivValidator) SignRebondTx(chainID string, rebondTx *types.Rebon
 	if privVal.LastHeight < rebondTx.Height {
 
 		// Persist height/round/step
+		// Prevent doing anything else for this rebondTx.Height.
 		privVal.LastHeight = rebondTx.Height
-		privVal.LastRound = math.MaxUint64 // We can't do anything else for this rebondTx.Height.
-		privVal.LastStep = math.MaxUint8
+		privVal.LastRound = math.MaxInt32 // MaxInt64 overflows on 32bit architectures.
+		privVal.LastStep = math.MaxInt8
 		privVal.save()
 
 		// Sign
-		rebondTx.Signature = privVal.PrivKey.Sign(account.SignBytes(chainID, rebondTx)).(account.SignatureEd25519)
+		rebondTx.Signature = privVal.PrivKey.Sign(acm.SignBytes(chainID, rebondTx)).(acm.SignatureEd25519)
 		return nil
 	} else {
 		return errors.New(fmt.Sprintf("Attempt of duplicate signing of rebondTx: Height %v", rebondTx.Height))

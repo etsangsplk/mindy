@@ -4,28 +4,27 @@ package core_client
 
 import (
 	"fmt"
-	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	acm "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
-	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	ctypes "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core/types"
 	rpctypes "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/types"
 	sm "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/state"
 	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
+	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 	"io/ioutil"
 	"net/http"
 )
 
 type Client interface {
-	BlockchainInfo(minHeight uint, maxHeight uint) (*ctypes.ResponseBlockchainInfo, error)
+	BlockchainInfo(minHeight int, maxHeight int) (*ctypes.ResponseBlockchainInfo, error)
 	BroadcastTx(tx types.Tx) (*ctypes.Receipt, error)
-	Call(address []byte, data []byte) (*ctypes.ResponseCall, error)
-	CallCode(code []byte, data []byte) (*ctypes.ResponseCall, error)
+	Call(fromAddress []byte, toAddress []byte, data []byte) (*ctypes.ResponseCall, error)
+	CallCode(fromAddress []byte, code []byte, data []byte) (*ctypes.ResponseCall, error)
 	DumpConsensusState() (*ctypes.ResponseDumpConsensusState, error)
 	DumpStorage(address []byte) (*ctypes.ResponseDumpStorage, error)
 	GenPrivAccount() (*acm.PrivAccount, error)
 	Genesis() (*sm.GenesisDoc, error)
 	GetAccount(address []byte) (*acm.Account, error)
-	GetBlock(height uint) (*ctypes.ResponseGetBlock, error)
+	GetBlock(height int) (*ctypes.ResponseGetBlock, error)
 	GetName(name string) (*types.NameRegEntry, error)
 	GetStorage(address []byte, key []byte) (*ctypes.ResponseGetStorage, error)
 	ListAccounts() (*ctypes.ResponseListAccounts, error)
@@ -33,11 +32,11 @@ type Client interface {
 	ListUnconfirmedTxs() ([]types.Tx, error)
 	ListValidators() (*ctypes.ResponseListValidators, error)
 	NetInfo() (*ctypes.ResponseNetInfo, error)
-	SignTx(tx types.Tx, privAccounts []*account.PrivAccount) (types.Tx, error)
+	SignTx(tx types.Tx, privAccounts []*acm.PrivAccount) (types.Tx, error)
 	Status() (*ctypes.ResponseStatus, error)
 }
 
-func (c *ClientHTTP) BlockchainInfo(minHeight uint, maxHeight uint) (*ctypes.ResponseBlockchainInfo, error) {
+func (c *ClientHTTP) BlockchainInfo(minHeight int, maxHeight int) (*ctypes.ResponseBlockchainInfo, error) {
 	values, err := argsToURLValues([]string{"minHeight", "maxHeight"}, minHeight, maxHeight)
 	if err != nil {
 		return nil, err
@@ -57,7 +56,7 @@ func (c *ClientHTTP) BlockchainInfo(minHeight uint, maxHeight uint) (*ctypes.Res
 		Id      string                         `json:"id"`
 		JSONRPC string                         `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +86,7 @@ func (c *ClientHTTP) BroadcastTx(tx types.Tx) (*ctypes.Receipt, error) {
 		Id      string          `json:"id"`
 		JSONRPC string          `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -97,8 +96,8 @@ func (c *ClientHTTP) BroadcastTx(tx types.Tx) (*ctypes.Receipt, error) {
 	return response.Result, nil
 }
 
-func (c *ClientHTTP) Call(address []byte, data []byte) (*ctypes.ResponseCall, error) {
-	values, err := argsToURLValues([]string{"address", "data"}, address, data)
+func (c *ClientHTTP) Call(fromAddress []byte, toAddress []byte, data []byte) (*ctypes.ResponseCall, error) {
+	values, err := argsToURLValues([]string{"fromAddress", "toAddress", "data"}, fromAddress, toAddress, data)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +116,7 @@ func (c *ClientHTTP) Call(address []byte, data []byte) (*ctypes.ResponseCall, er
 		Id      string               `json:"id"`
 		JSONRPC string               `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -127,8 +126,8 @@ func (c *ClientHTTP) Call(address []byte, data []byte) (*ctypes.ResponseCall, er
 	return response.Result, nil
 }
 
-func (c *ClientHTTP) CallCode(code []byte, data []byte) (*ctypes.ResponseCall, error) {
-	values, err := argsToURLValues([]string{"code", "data"}, code, data)
+func (c *ClientHTTP) CallCode(fromAddress []byte, code []byte, data []byte) (*ctypes.ResponseCall, error) {
+	values, err := argsToURLValues([]string{"fromAddress", "code", "data"}, fromAddress, code, data)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +146,7 @@ func (c *ClientHTTP) CallCode(code []byte, data []byte) (*ctypes.ResponseCall, e
 		Id      string               `json:"id"`
 		JSONRPC string               `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +176,7 @@ func (c *ClientHTTP) DumpConsensusState() (*ctypes.ResponseDumpConsensusState, e
 		Id      string                             `json:"id"`
 		JSONRPC string                             `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +206,7 @@ func (c *ClientHTTP) DumpStorage(address []byte) (*ctypes.ResponseDumpStorage, e
 		Id      string                      `json:"id"`
 		JSONRPC string                      `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +236,7 @@ func (c *ClientHTTP) GenPrivAccount() (*acm.PrivAccount, error) {
 		Id      string           `json:"id"`
 		JSONRPC string           `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -267,7 +266,7 @@ func (c *ClientHTTP) Genesis() (*sm.GenesisDoc, error) {
 		Id      string         `json:"id"`
 		JSONRPC string         `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -297,7 +296,7 @@ func (c *ClientHTTP) GetAccount(address []byte) (*acm.Account, error) {
 		Id      string       `json:"id"`
 		JSONRPC string       `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -307,7 +306,7 @@ func (c *ClientHTTP) GetAccount(address []byte) (*acm.Account, error) {
 	return response.Result, nil
 }
 
-func (c *ClientHTTP) GetBlock(height uint) (*ctypes.ResponseGetBlock, error) {
+func (c *ClientHTTP) GetBlock(height int) (*ctypes.ResponseGetBlock, error) {
 	values, err := argsToURLValues([]string{"height"}, height)
 	if err != nil {
 		return nil, err
@@ -327,7 +326,7 @@ func (c *ClientHTTP) GetBlock(height uint) (*ctypes.ResponseGetBlock, error) {
 		Id      string                   `json:"id"`
 		JSONRPC string                   `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -357,7 +356,7 @@ func (c *ClientHTTP) GetName(name string) (*types.NameRegEntry, error) {
 		Id      string              `json:"id"`
 		JSONRPC string              `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -387,7 +386,7 @@ func (c *ClientHTTP) GetStorage(address []byte, key []byte) (*ctypes.ResponseGet
 		Id      string                     `json:"id"`
 		JSONRPC string                     `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -417,7 +416,7 @@ func (c *ClientHTTP) ListAccounts() (*ctypes.ResponseListAccounts, error) {
 		Id      string                       `json:"id"`
 		JSONRPC string                       `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -447,7 +446,7 @@ func (c *ClientHTTP) ListNames() (*ctypes.ResponseListNames, error) {
 		Id      string                    `json:"id"`
 		JSONRPC string                    `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -477,7 +476,7 @@ func (c *ClientHTTP) ListUnconfirmedTxs() ([]types.Tx, error) {
 		Id      string     `json:"id"`
 		JSONRPC string     `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -507,7 +506,7 @@ func (c *ClientHTTP) ListValidators() (*ctypes.ResponseListValidators, error) {
 		Id      string                         `json:"id"`
 		JSONRPC string                         `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -537,7 +536,7 @@ func (c *ClientHTTP) NetInfo() (*ctypes.ResponseNetInfo, error) {
 		Id      string                  `json:"id"`
 		JSONRPC string                  `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -547,7 +546,7 @@ func (c *ClientHTTP) NetInfo() (*ctypes.ResponseNetInfo, error) {
 	return response.Result, nil
 }
 
-func (c *ClientHTTP) SignTx(tx types.Tx, privAccounts []*account.PrivAccount) (types.Tx, error) {
+func (c *ClientHTTP) SignTx(tx types.Tx, privAccounts []*acm.PrivAccount) (types.Tx, error) {
 	values, err := argsToURLValues([]string{"tx", "privAccounts"}, tx, privAccounts)
 	if err != nil {
 		return nil, err
@@ -567,7 +566,7 @@ func (c *ClientHTTP) SignTx(tx types.Tx, privAccounts []*account.PrivAccount) (t
 		Id      string   `json:"id"`
 		JSONRPC string   `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -597,7 +596,7 @@ func (c *ClientHTTP) Status() (*ctypes.ResponseStatus, error) {
 		Id      string                 `json:"id"`
 		JSONRPC string                 `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -607,12 +606,12 @@ func (c *ClientHTTP) Status() (*ctypes.ResponseStatus, error) {
 	return response.Result, nil
 }
 
-func (c *ClientJSON) BlockchainInfo(minHeight uint, maxHeight uint) (*ctypes.ResponseBlockchainInfo, error) {
+func (c *ClientJSON) BlockchainInfo(minHeight int, maxHeight int) (*ctypes.ResponseBlockchainInfo, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["BlockchainInfo"],
 		Params:  []interface{}{minHeight, maxHeight},
-		Id:      0,
+		Id:      "",
 	}
 	body, err := c.RequestResponse(request)
 	if err != nil {
@@ -624,7 +623,7 @@ func (c *ClientJSON) BlockchainInfo(minHeight uint, maxHeight uint) (*ctypes.Res
 		Id      string                         `json:"id"`
 		JSONRPC string                         `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -639,7 +638,7 @@ func (c *ClientJSON) BroadcastTx(tx types.Tx) (*ctypes.Receipt, error) {
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["BroadcastTx"],
 		Params:  []interface{}{tx},
-		Id:      0,
+		Id:      "",
 	}
 	body, err := c.RequestResponse(request)
 	if err != nil {
@@ -651,7 +650,7 @@ func (c *ClientJSON) BroadcastTx(tx types.Tx) (*ctypes.Receipt, error) {
 		Id      string          `json:"id"`
 		JSONRPC string          `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -661,12 +660,12 @@ func (c *ClientJSON) BroadcastTx(tx types.Tx) (*ctypes.Receipt, error) {
 	return response.Result, nil
 }
 
-func (c *ClientJSON) Call(address []byte, data []byte) (*ctypes.ResponseCall, error) {
+func (c *ClientJSON) Call(fromAddress []byte, toAddress []byte, data []byte) (*ctypes.ResponseCall, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["Call"],
-		Params:  []interface{}{address, data},
-		Id:      0,
+		Params:  []interface{}{fromAddress, toAddress, data},
+		Id:      "",
 	}
 	body, err := c.RequestResponse(request)
 	if err != nil {
@@ -678,7 +677,7 @@ func (c *ClientJSON) Call(address []byte, data []byte) (*ctypes.ResponseCall, er
 		Id      string               `json:"id"`
 		JSONRPC string               `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -688,12 +687,12 @@ func (c *ClientJSON) Call(address []byte, data []byte) (*ctypes.ResponseCall, er
 	return response.Result, nil
 }
 
-func (c *ClientJSON) CallCode(code []byte, data []byte) (*ctypes.ResponseCall, error) {
+func (c *ClientJSON) CallCode(fromAddress []byte, code []byte, data []byte) (*ctypes.ResponseCall, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["CallCode"],
-		Params:  []interface{}{code, data},
-		Id:      0,
+		Params:  []interface{}{fromAddress, code, data},
+		Id:      "",
 	}
 	body, err := c.RequestResponse(request)
 	if err != nil {
@@ -705,7 +704,7 @@ func (c *ClientJSON) CallCode(code []byte, data []byte) (*ctypes.ResponseCall, e
 		Id      string               `json:"id"`
 		JSONRPC string               `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -720,7 +719,7 @@ func (c *ClientJSON) DumpConsensusState() (*ctypes.ResponseDumpConsensusState, e
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["DumpConsensusState"],
 		Params:  []interface{}{},
-		Id:      0,
+		Id:      "",
 	}
 	body, err := c.RequestResponse(request)
 	if err != nil {
@@ -732,7 +731,7 @@ func (c *ClientJSON) DumpConsensusState() (*ctypes.ResponseDumpConsensusState, e
 		Id      string                             `json:"id"`
 		JSONRPC string                             `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -747,7 +746,7 @@ func (c *ClientJSON) DumpStorage(address []byte) (*ctypes.ResponseDumpStorage, e
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["DumpStorage"],
 		Params:  []interface{}{address},
-		Id:      0,
+		Id:      "",
 	}
 	body, err := c.RequestResponse(request)
 	if err != nil {
@@ -759,7 +758,7 @@ func (c *ClientJSON) DumpStorage(address []byte) (*ctypes.ResponseDumpStorage, e
 		Id      string                      `json:"id"`
 		JSONRPC string                      `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -774,7 +773,7 @@ func (c *ClientJSON) GenPrivAccount() (*acm.PrivAccount, error) {
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["GenPrivAccount"],
 		Params:  []interface{}{},
-		Id:      0,
+		Id:      "",
 	}
 	body, err := c.RequestResponse(request)
 	if err != nil {
@@ -786,7 +785,7 @@ func (c *ClientJSON) GenPrivAccount() (*acm.PrivAccount, error) {
 		Id      string           `json:"id"`
 		JSONRPC string           `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -801,7 +800,7 @@ func (c *ClientJSON) Genesis() (*sm.GenesisDoc, error) {
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["Genesis"],
 		Params:  []interface{}{},
-		Id:      0,
+		Id:      "",
 	}
 	body, err := c.RequestResponse(request)
 	if err != nil {
@@ -813,7 +812,7 @@ func (c *ClientJSON) Genesis() (*sm.GenesisDoc, error) {
 		Id      string         `json:"id"`
 		JSONRPC string         `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -828,7 +827,7 @@ func (c *ClientJSON) GetAccount(address []byte) (*acm.Account, error) {
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["GetAccount"],
 		Params:  []interface{}{address},
-		Id:      0,
+		Id:      "",
 	}
 	body, err := c.RequestResponse(request)
 	if err != nil {
@@ -840,7 +839,7 @@ func (c *ClientJSON) GetAccount(address []byte) (*acm.Account, error) {
 		Id      string       `json:"id"`
 		JSONRPC string       `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -850,12 +849,12 @@ func (c *ClientJSON) GetAccount(address []byte) (*acm.Account, error) {
 	return response.Result, nil
 }
 
-func (c *ClientJSON) GetBlock(height uint) (*ctypes.ResponseGetBlock, error) {
+func (c *ClientJSON) GetBlock(height int) (*ctypes.ResponseGetBlock, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["GetBlock"],
 		Params:  []interface{}{height},
-		Id:      0,
+		Id:      "",
 	}
 	body, err := c.RequestResponse(request)
 	if err != nil {
@@ -867,7 +866,7 @@ func (c *ClientJSON) GetBlock(height uint) (*ctypes.ResponseGetBlock, error) {
 		Id      string                   `json:"id"`
 		JSONRPC string                   `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -882,7 +881,7 @@ func (c *ClientJSON) GetName(name string) (*types.NameRegEntry, error) {
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["GetName"],
 		Params:  []interface{}{name},
-		Id:      0,
+		Id:      "",
 	}
 	body, err := c.RequestResponse(request)
 	if err != nil {
@@ -894,7 +893,7 @@ func (c *ClientJSON) GetName(name string) (*types.NameRegEntry, error) {
 		Id      string              `json:"id"`
 		JSONRPC string              `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -909,7 +908,7 @@ func (c *ClientJSON) GetStorage(address []byte, key []byte) (*ctypes.ResponseGet
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["GetStorage"],
 		Params:  []interface{}{address, key},
-		Id:      0,
+		Id:      "",
 	}
 	body, err := c.RequestResponse(request)
 	if err != nil {
@@ -921,7 +920,7 @@ func (c *ClientJSON) GetStorage(address []byte, key []byte) (*ctypes.ResponseGet
 		Id      string                     `json:"id"`
 		JSONRPC string                     `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -936,7 +935,7 @@ func (c *ClientJSON) ListAccounts() (*ctypes.ResponseListAccounts, error) {
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["ListAccounts"],
 		Params:  []interface{}{},
-		Id:      0,
+		Id:      "",
 	}
 	body, err := c.RequestResponse(request)
 	if err != nil {
@@ -948,7 +947,7 @@ func (c *ClientJSON) ListAccounts() (*ctypes.ResponseListAccounts, error) {
 		Id      string                       `json:"id"`
 		JSONRPC string                       `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -963,7 +962,7 @@ func (c *ClientJSON) ListNames() (*ctypes.ResponseListNames, error) {
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["ListNames"],
 		Params:  []interface{}{},
-		Id:      0,
+		Id:      "",
 	}
 	body, err := c.RequestResponse(request)
 	if err != nil {
@@ -975,7 +974,7 @@ func (c *ClientJSON) ListNames() (*ctypes.ResponseListNames, error) {
 		Id      string                    `json:"id"`
 		JSONRPC string                    `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -990,7 +989,7 @@ func (c *ClientJSON) ListUnconfirmedTxs() ([]types.Tx, error) {
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["ListUnconfirmedTxs"],
 		Params:  []interface{}{},
-		Id:      0,
+		Id:      "",
 	}
 	body, err := c.RequestResponse(request)
 	if err != nil {
@@ -1002,7 +1001,7 @@ func (c *ClientJSON) ListUnconfirmedTxs() ([]types.Tx, error) {
 		Id      string     `json:"id"`
 		JSONRPC string     `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -1017,7 +1016,7 @@ func (c *ClientJSON) ListValidators() (*ctypes.ResponseListValidators, error) {
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["ListValidators"],
 		Params:  []interface{}{},
-		Id:      0,
+		Id:      "",
 	}
 	body, err := c.RequestResponse(request)
 	if err != nil {
@@ -1029,7 +1028,7 @@ func (c *ClientJSON) ListValidators() (*ctypes.ResponseListValidators, error) {
 		Id      string                         `json:"id"`
 		JSONRPC string                         `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -1044,7 +1043,7 @@ func (c *ClientJSON) NetInfo() (*ctypes.ResponseNetInfo, error) {
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["NetInfo"],
 		Params:  []interface{}{},
-		Id:      0,
+		Id:      "",
 	}
 	body, err := c.RequestResponse(request)
 	if err != nil {
@@ -1056,7 +1055,7 @@ func (c *ClientJSON) NetInfo() (*ctypes.ResponseNetInfo, error) {
 		Id      string                  `json:"id"`
 		JSONRPC string                  `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -1066,12 +1065,12 @@ func (c *ClientJSON) NetInfo() (*ctypes.ResponseNetInfo, error) {
 	return response.Result, nil
 }
 
-func (c *ClientJSON) SignTx(tx types.Tx, privAccounts []*account.PrivAccount) (types.Tx, error) {
+func (c *ClientJSON) SignTx(tx types.Tx, privAccounts []*acm.PrivAccount) (types.Tx, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["SignTx"],
 		Params:  []interface{}{tx, privAccounts},
-		Id:      0,
+		Id:      "",
 	}
 	body, err := c.RequestResponse(request)
 	if err != nil {
@@ -1083,7 +1082,7 @@ func (c *ClientJSON) SignTx(tx types.Tx, privAccounts []*account.PrivAccount) (t
 		Id      string   `json:"id"`
 		JSONRPC string   `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}
@@ -1098,7 +1097,7 @@ func (c *ClientJSON) Status() (*ctypes.ResponseStatus, error) {
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["Status"],
 		Params:  []interface{}{},
-		Id:      0,
+		Id:      "",
 	}
 	body, err := c.RequestResponse(request)
 	if err != nil {
@@ -1110,7 +1109,7 @@ func (c *ClientJSON) Status() (*ctypes.ResponseStatus, error) {
 		Id      string                 `json:"id"`
 		JSONRPC string                 `json:"jsonrpc"`
 	}
-	binary.ReadJSON(&response, body, &err)
+	wire.ReadJSON(&response, body, &err)
 	if err != nil {
 		return nil, err
 	}

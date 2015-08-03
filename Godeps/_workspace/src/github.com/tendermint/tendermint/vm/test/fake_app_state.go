@@ -36,11 +36,10 @@ func (fas *FakeAppState) CreateAccount(creator *Account) *Account {
 	account := fas.accounts[addr.String()]
 	if account == nil {
 		return &Account{
-			Address:     addr,
-			Balance:     0,
-			Code:        nil,
-			Nonce:       0,
-			StorageRoot: Zero256,
+			Address: addr,
+			Balance: 0,
+			Code:    nil,
+			Nonce:   0,
 		}
 	} else {
 		panic(Fmt("Invalid account addr: %X", addr))
@@ -80,6 +79,6 @@ func createAddress(creator *Account) Word256 {
 	creator.Nonce += 1
 	temp := make([]byte, 32+8)
 	copy(temp, creator.Address[:])
-	PutUint64BE(temp[32:], nonce)
+	PutInt64BE(temp[32:], nonce)
 	return LeftPadWord256(sha3.Sha3(temp)[:20])
 }
