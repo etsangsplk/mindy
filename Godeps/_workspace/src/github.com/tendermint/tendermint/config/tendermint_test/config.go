@@ -31,7 +31,6 @@ func initTMRoot(rootDir string) {
 
 	configFilePath := path.Join(rootDir, "config.toml")
 	genesisFilePath := path.Join(rootDir, "genesis.json")
-	privValFilePath := path.Join(rootDir, "priv_validator.json")
 
 	// Write default config file if missing.
 	if !FileExists(configFilePath) {
@@ -41,9 +40,6 @@ func initTMRoot(rootDir string) {
 	}
 	if !FileExists(genesisFilePath) {
 		MustWriteFile(genesisFilePath, []byte(defaultGenesis))
-	}
-	if !FileExists(privValFilePath) {
-		MustWriteFile(privValFilePath, []byte(privValFilePath))
 	}
 }
 
@@ -67,7 +63,7 @@ func GetConfig(rootDir string) cfg.Config {
 		Exit("Cannot set 'version' via config.toml")
 	}
 	mapConfig.SetDefault("chain_id", "tendermint_test")
-	mapConfig.SetDefault("version", "0.3.0")
+	mapConfig.SetDefault("version", "0.5.0")
 	mapConfig.SetDefault("genesis_file", rootDir+"/genesis.json")
 	mapConfig.SetDefault("moniker", "anonymous")
 	mapConfig.SetDefault("node_laddr", "0.0.0.0:36656")
@@ -78,6 +74,7 @@ func GetConfig(rootDir string) cfg.Config {
 	mapConfig.SetDefault("db_dir", rootDir+"/data")
 	mapConfig.SetDefault("log_level", "debug")
 	mapConfig.SetDefault("rpc_laddr", "0.0.0.0:36657")
+	mapConfig.SetDefault("revisions_file", rootDir+"/revisions")
 	return mapConfig
 }
 

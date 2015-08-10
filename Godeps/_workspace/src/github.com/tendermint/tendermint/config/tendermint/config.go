@@ -57,8 +57,11 @@ func GetConfig(rootDir string) cfg.Config {
 	if mapConfig.IsSet("version") {
 		Exit("Cannot set 'version' via config.toml")
 	}
-	mapConfig.SetDefault("chain_id", "tendermint_testnet_5")
-	mapConfig.SetDefault("version", "0.3.0") // JAE: changed merkle tree persistence format for merkle proofs.
+	mapConfig.SetDefault("chain_id", "tendermint_testnet_9")
+	// Major: alpha
+	// Minor: encrypted p2p!
+	// Revision: ripemd for NewContractAddress
+	mapConfig.SetDefault("version", "0.5.1")
 	mapConfig.SetDefault("genesis_file", rootDir+"/genesis.json")
 	mapConfig.SetDefault("moniker", "anonymous")
 	mapConfig.SetDefault("node_laddr", "0.0.0.0:46656")
@@ -70,6 +73,7 @@ func GetConfig(rootDir string) cfg.Config {
 	mapConfig.SetDefault("db_dir", rootDir+"/data")
 	mapConfig.SetDefault("log_level", "info")
 	mapConfig.SetDefault("rpc_laddr", "0.0.0.0:46657")
+	mapConfig.SetDefault("revisions_file", rootDir+"/revisions")
 	return mapConfig
 }
 
@@ -97,24 +101,20 @@ func defaultConfig(moniker string) (defaultConfig string) {
 }
 
 var defaultGenesis = `{
-    "chain_id": "tendermint_testnet_5",
+    "chain_id": "tendermint_testnet_9",
     "accounts": [
         {
-            "address": "F81CB9ED0A868BD961C4F5BBC0E39B763B89FCB6",
+            "address": "9FCBA7F840A0BFEBBE755E853C9947270A912D04",
             "amount": 690000000000
         },
         {
-            "address": "0000000000000000000000000000000000000002",
-            "amount": 565000000000
-        },
+            "address": "A88A61069B6660F30F65E8786AFDD4F1D8F625E9",
+						"amount": 1000000
+				},
         {
-            "address": "9E54C9ECA9A3FD5D4496696818DA17A9E17F69DA",
-            "amount": 525000000000
-        },
-        {
-            "address": "0000000000000000000000000000000000000004",
-            "amount": 110000000000
-        }
+            "address": "EE2EE9247973B4AFC3867CFE5F415410AC251B61",
+						"amount": 1000000
+				}
     ],
     "validators": [
         {

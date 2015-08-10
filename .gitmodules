@@ -1,3 +1,0 @@
-[submodule "tendermint"]
-	path = tendermint
-	url = https://github.com/tendermint/tendermint
