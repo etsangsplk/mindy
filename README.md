@@ -85,7 +85,7 @@ Of course this will only work with the real DNS system if you own the domain `ne
 # Run the containers yourself
 
 A full mindy node uses 4 containers: one for each of tendermint, tendermint's data, tinydns, and mindy. They can be used all together 
-or in varying combinations. See the `tendermint` and `tinydns` sub-directories for details on running those containers.
+or in varying combinations. The recommended way to setup containers is with [`eris-cli`](https://github.com/eris-ltd/eris-cli), and we will have a tutorial for setting up a mindy cluster using eris-cli available soon. In the meantime, see the [tendermint repo](https://github.com/tendermint/tendermint/tree/develop/DOCKER) and the [tinydns folder](https://github.com/eris-ltd/mindy/tree/master/tinydns) in this repo to set up those containers.
 
 Once tinydns and tendermint are running, 
 
