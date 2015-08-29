@@ -5,11 +5,12 @@ import (
 
 	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/ed25519"
 	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/ed25519/extra25519"
-	. "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/common" // PubKey is part of Account and Validator.
+	. "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 	"github.com/eris-ltd/mindy/Godeps/_workspace/src/golang.org/x/crypto/ripemd160"
 )
 
+// PubKey is part of Account and Validator.
 type PubKey interface {
 	Address() []byte
 	VerifyBytes(msg []byte, sig Signature) bool

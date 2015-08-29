@@ -3,10 +3,11 @@ package account
 import (
 	"fmt"
 
-	. "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/common" // Signature is a part of Txs and consensus Votes.
+	. "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
+// Signature is a part of Txs and consensus Votes.
 type Signature interface {
 	IsZero() bool
 	String() string

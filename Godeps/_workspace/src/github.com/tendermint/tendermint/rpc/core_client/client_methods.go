@@ -7,36 +7,34 @@ import (
 	acm "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	ctypes "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core/types"
 	rpctypes "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/types"
-	sm "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/state"
 	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
-	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 	"io/ioutil"
 	"net/http"
 )
 
 type Client interface {
-	BlockchainInfo(minHeight int, maxHeight int) (*ctypes.ResponseBlockchainInfo, error)
-	BroadcastTx(tx types.Tx) (*ctypes.Receipt, error)
-	Call(fromAddress []byte, toAddress []byte, data []byte) (*ctypes.ResponseCall, error)
-	CallCode(fromAddress []byte, code []byte, data []byte) (*ctypes.ResponseCall, error)
-	DumpConsensusState() (*ctypes.ResponseDumpConsensusState, error)
-	DumpStorage(address []byte) (*ctypes.ResponseDumpStorage, error)
-	GenPrivAccount() (*acm.PrivAccount, error)
-	Genesis() (*sm.GenesisDoc, error)
-	GetAccount(address []byte) (*acm.Account, error)
-	GetBlock(height int) (*ctypes.ResponseGetBlock, error)
-	GetName(name string) (*types.NameRegEntry, error)
-	GetStorage(address []byte, key []byte) (*ctypes.ResponseGetStorage, error)
-	ListAccounts() (*ctypes.ResponseListAccounts, error)
-	ListNames() (*ctypes.ResponseListNames, error)
-	ListUnconfirmedTxs() ([]types.Tx, error)
-	ListValidators() (*ctypes.ResponseListValidators, error)
-	NetInfo() (*ctypes.ResponseNetInfo, error)
-	SignTx(tx types.Tx, privAccounts []*acm.PrivAccount) (types.Tx, error)
-	Status() (*ctypes.ResponseStatus, error)
+	BlockchainInfo(minHeight int, maxHeight int) (*ctypes.ResultBlockchainInfo, error)
+	BroadcastTx(tx types.Tx) (*ctypes.ResultBroadcastTx, error)
+	Call(fromAddress []byte, toAddress []byte, data []byte) (*ctypes.ResultCall, error)
+	CallCode(fromAddress []byte, code []byte, data []byte) (*ctypes.ResultCall, error)
+	DumpConsensusState() (*ctypes.ResultDumpConsensusState, error)
+	DumpStorage(address []byte) (*ctypes.ResultDumpStorage, error)
+	GenPrivAccount() (*ctypes.ResultGenPrivAccount, error)
+	Genesis() (*ctypes.ResultGenesis, error)
+	GetAccount(address []byte) (*ctypes.ResultGetAccount, error)
+	GetBlock(height int) (*ctypes.ResultGetBlock, error)
+	GetName(name string) (*ctypes.ResultGetName, error)
+	GetStorage(address []byte, key []byte) (*ctypes.ResultGetStorage, error)
+	ListAccounts() (*ctypes.ResultListAccounts, error)
+	ListNames() (*ctypes.ResultListNames, error)
+	ListUnconfirmedTxs() (*ctypes.ResultListUnconfirmedTxs, error)
+	ListValidators() (*ctypes.ResultListValidators, error)
+	NetInfo() (*ctypes.ResultNetInfo, error)
+	SignTx(tx types.Tx, privAccounts []*acm.PrivAccount) (*ctypes.ResultSignTx, error)
+	Status() (*ctypes.ResultStatus, error)
 }
 
-func (c *ClientHTTP) BlockchainInfo(minHeight int, maxHeight int) (*ctypes.ResponseBlockchainInfo, error) {
+func (c *ClientHTTP) BlockchainInfo(minHeight int, maxHeight int) (*ctypes.ResultBlockchainInfo, error) {
 	values, err := argsToURLValues([]string{"minHeight", "maxHeight"}, minHeight, maxHeight)
 	if err != nil {
 		return nil, err
@@ -50,23 +48,21 @@ func (c *ClientHTTP) BlockchainInfo(minHeight int, maxHeight int) (*ctypes.Respo
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseBlockchainInfo `json:"result"`
-		Error   string                         `json:"error"`
-		Id      string                         `json:"id"`
-		JSONRPC string                         `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultBlockchainInfo)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientHTTP) BroadcastTx(tx types.Tx) (*ctypes.Receipt, error) {
+func (c *ClientHTTP) BroadcastTx(tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
 	values, err := argsToURLValues([]string{"tx"}, tx)
 	if err != nil {
 		return nil, err
@@ -80,23 +76,21 @@ func (c *ClientHTTP) BroadcastTx(tx types.Tx) (*ctypes.Receipt, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.Receipt `json:"result"`
-		Error   string          `json:"error"`
-		Id      string          `json:"id"`
-		JSONRPC string          `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultBroadcastTx)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientHTTP) Call(fromAddress []byte, toAddress []byte, data []byte) (*ctypes.ResponseCall, error) {
+func (c *ClientHTTP) Call(fromAddress []byte, toAddress []byte, data []byte) (*ctypes.ResultCall, error) {
 	values, err := argsToURLValues([]string{"fromAddress", "toAddress", "data"}, fromAddress, toAddress, data)
 	if err != nil {
 		return nil, err
@@ -110,23 +104,21 @@ func (c *ClientHTTP) Call(fromAddress []byte, toAddress []byte, data []byte) (*c
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseCall `json:"result"`
-		Error   string               `json:"error"`
-		Id      string               `json:"id"`
-		JSONRPC string               `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultCall)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientHTTP) CallCode(fromAddress []byte, code []byte, data []byte) (*ctypes.ResponseCall, error) {
+func (c *ClientHTTP) CallCode(fromAddress []byte, code []byte, data []byte) (*ctypes.ResultCall, error) {
 	values, err := argsToURLValues([]string{"fromAddress", "code", "data"}, fromAddress, code, data)
 	if err != nil {
 		return nil, err
@@ -140,23 +132,21 @@ func (c *ClientHTTP) CallCode(fromAddress []byte, code []byte, data []byte) (*ct
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseCall `json:"result"`
-		Error   string               `json:"error"`
-		Id      string               `json:"id"`
-		JSONRPC string               `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultCall)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientHTTP) DumpConsensusState() (*ctypes.ResponseDumpConsensusState, error) {
+func (c *ClientHTTP) DumpConsensusState() (*ctypes.ResultDumpConsensusState, error) {
 	values, err := argsToURLValues(nil)
 	if err != nil {
 		return nil, err
@@ -170,23 +160,21 @@ func (c *ClientHTTP) DumpConsensusState() (*ctypes.ResponseDumpConsensusState, e
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseDumpConsensusState `json:"result"`
-		Error   string                             `json:"error"`
-		Id      string                             `json:"id"`
-		JSONRPC string                             `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultDumpConsensusState)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientHTTP) DumpStorage(address []byte) (*ctypes.ResponseDumpStorage, error) {
+func (c *ClientHTTP) DumpStorage(address []byte) (*ctypes.ResultDumpStorage, error) {
 	values, err := argsToURLValues([]string{"address"}, address)
 	if err != nil {
 		return nil, err
@@ -200,23 +188,21 @@ func (c *ClientHTTP) DumpStorage(address []byte) (*ctypes.ResponseDumpStorage, e
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseDumpStorage `json:"result"`
-		Error   string                      `json:"error"`
-		Id      string                      `json:"id"`
-		JSONRPC string                      `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultDumpStorage)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientHTTP) GenPrivAccount() (*acm.PrivAccount, error) {
+func (c *ClientHTTP) GenPrivAccount() (*ctypes.ResultGenPrivAccount, error) {
 	values, err := argsToURLValues(nil)
 	if err != nil {
 		return nil, err
@@ -230,23 +216,21 @@ func (c *ClientHTTP) GenPrivAccount() (*acm.PrivAccount, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *acm.PrivAccount `json:"result"`
-		Error   string           `json:"error"`
-		Id      string           `json:"id"`
-		JSONRPC string           `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultGenPrivAccount)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientHTTP) Genesis() (*sm.GenesisDoc, error) {
+func (c *ClientHTTP) Genesis() (*ctypes.ResultGenesis, error) {
 	values, err := argsToURLValues(nil)
 	if err != nil {
 		return nil, err
@@ -260,23 +244,21 @@ func (c *ClientHTTP) Genesis() (*sm.GenesisDoc, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *sm.GenesisDoc `json:"result"`
-		Error   string         `json:"error"`
-		Id      string         `json:"id"`
-		JSONRPC string         `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultGenesis)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientHTTP) GetAccount(address []byte) (*acm.Account, error) {
+func (c *ClientHTTP) GetAccount(address []byte) (*ctypes.ResultGetAccount, error) {
 	values, err := argsToURLValues([]string{"address"}, address)
 	if err != nil {
 		return nil, err
@@ -290,23 +272,21 @@ func (c *ClientHTTP) GetAccount(address []byte) (*acm.Account, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *acm.Account `json:"result"`
-		Error   string       `json:"error"`
-		Id      string       `json:"id"`
-		JSONRPC string       `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultGetAccount)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientHTTP) GetBlock(height int) (*ctypes.ResponseGetBlock, error) {
+func (c *ClientHTTP) GetBlock(height int) (*ctypes.ResultGetBlock, error) {
 	values, err := argsToURLValues([]string{"height"}, height)
 	if err != nil {
 		return nil, err
@@ -320,23 +300,21 @@ func (c *ClientHTTP) GetBlock(height int) (*ctypes.ResponseGetBlock, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseGetBlock `json:"result"`
-		Error   string                   `json:"error"`
-		Id      string                   `json:"id"`
-		JSONRPC string                   `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultGetBlock)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientHTTP) GetName(name string) (*types.NameRegEntry, error) {
+func (c *ClientHTTP) GetName(name string) (*ctypes.ResultGetName, error) {
 	values, err := argsToURLValues([]string{"name"}, name)
 	if err != nil {
 		return nil, err
@@ -350,23 +328,21 @@ func (c *ClientHTTP) GetName(name string) (*types.NameRegEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *types.NameRegEntry `json:"result"`
-		Error   string              `json:"error"`
-		Id      string              `json:"id"`
-		JSONRPC string              `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultGetName)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientHTTP) GetStorage(address []byte, key []byte) (*ctypes.ResponseGetStorage, error) {
+func (c *ClientHTTP) GetStorage(address []byte, key []byte) (*ctypes.ResultGetStorage, error) {
 	values, err := argsToURLValues([]string{"address", "key"}, address, key)
 	if err != nil {
 		return nil, err
@@ -380,23 +356,21 @@ func (c *ClientHTTP) GetStorage(address []byte, key []byte) (*ctypes.ResponseGet
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseGetStorage `json:"result"`
-		Error   string                     `json:"error"`
-		Id      string                     `json:"id"`
-		JSONRPC string                     `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultGetStorage)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientHTTP) ListAccounts() (*ctypes.ResponseListAccounts, error) {
+func (c *ClientHTTP) ListAccounts() (*ctypes.ResultListAccounts, error) {
 	values, err := argsToURLValues(nil)
 	if err != nil {
 		return nil, err
@@ -410,23 +384,21 @@ func (c *ClientHTTP) ListAccounts() (*ctypes.ResponseListAccounts, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseListAccounts `json:"result"`
-		Error   string                       `json:"error"`
-		Id      string                       `json:"id"`
-		JSONRPC string                       `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultListAccounts)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientHTTP) ListNames() (*ctypes.ResponseListNames, error) {
+func (c *ClientHTTP) ListNames() (*ctypes.ResultListNames, error) {
 	values, err := argsToURLValues(nil)
 	if err != nil {
 		return nil, err
@@ -440,23 +412,21 @@ func (c *ClientHTTP) ListNames() (*ctypes.ResponseListNames, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseListNames `json:"result"`
-		Error   string                    `json:"error"`
-		Id      string                    `json:"id"`
-		JSONRPC string                    `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultListNames)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientHTTP) ListUnconfirmedTxs() ([]types.Tx, error) {
+func (c *ClientHTTP) ListUnconfirmedTxs() (*ctypes.ResultListUnconfirmedTxs, error) {
 	values, err := argsToURLValues(nil)
 	if err != nil {
 		return nil, err
@@ -470,23 +440,21 @@ func (c *ClientHTTP) ListUnconfirmedTxs() ([]types.Tx, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  []types.Tx `json:"result"`
-		Error   string     `json:"error"`
-		Id      string     `json:"id"`
-		JSONRPC string     `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultListUnconfirmedTxs)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientHTTP) ListValidators() (*ctypes.ResponseListValidators, error) {
+func (c *ClientHTTP) ListValidators() (*ctypes.ResultListValidators, error) {
 	values, err := argsToURLValues(nil)
 	if err != nil {
 		return nil, err
@@ -500,23 +468,21 @@ func (c *ClientHTTP) ListValidators() (*ctypes.ResponseListValidators, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseListValidators `json:"result"`
-		Error   string                         `json:"error"`
-		Id      string                         `json:"id"`
-		JSONRPC string                         `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultListValidators)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientHTTP) NetInfo() (*ctypes.ResponseNetInfo, error) {
+func (c *ClientHTTP) NetInfo() (*ctypes.ResultNetInfo, error) {
 	values, err := argsToURLValues(nil)
 	if err != nil {
 		return nil, err
@@ -530,23 +496,21 @@ func (c *ClientHTTP) NetInfo() (*ctypes.ResponseNetInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseNetInfo `json:"result"`
-		Error   string                  `json:"error"`
-		Id      string                  `json:"id"`
-		JSONRPC string                  `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultNetInfo)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientHTTP) SignTx(tx types.Tx, privAccounts []*acm.PrivAccount) (types.Tx, error) {
+func (c *ClientHTTP) SignTx(tx types.Tx, privAccounts []*acm.PrivAccount) (*ctypes.ResultSignTx, error) {
 	values, err := argsToURLValues([]string{"tx", "privAccounts"}, tx, privAccounts)
 	if err != nil {
 		return nil, err
@@ -560,23 +524,21 @@ func (c *ClientHTTP) SignTx(tx types.Tx, privAccounts []*acm.PrivAccount) (types
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  types.Tx `json:"result"`
-		Error   string   `json:"error"`
-		Id      string   `json:"id"`
-		JSONRPC string   `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultSignTx)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientHTTP) Status() (*ctypes.ResponseStatus, error) {
+func (c *ClientHTTP) Status() (*ctypes.ResultStatus, error) {
 	values, err := argsToURLValues(nil)
 	if err != nil {
 		return nil, err
@@ -590,23 +552,21 @@ func (c *ClientHTTP) Status() (*ctypes.ResponseStatus, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseStatus `json:"result"`
-		Error   string                 `json:"error"`
-		Id      string                 `json:"id"`
-		JSONRPC string                 `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultStatus)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientJSON) BlockchainInfo(minHeight int, maxHeight int) (*ctypes.ResponseBlockchainInfo, error) {
+func (c *ClientJSON) BlockchainInfo(minHeight int, maxHeight int) (*ctypes.ResultBlockchainInfo, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["BlockchainInfo"],
@@ -617,23 +577,21 @@ func (c *ClientJSON) BlockchainInfo(minHeight int, maxHeight int) (*ctypes.Respo
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseBlockchainInfo `json:"result"`
-		Error   string                         `json:"error"`
-		Id      string                         `json:"id"`
-		JSONRPC string                         `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultBlockchainInfo)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientJSON) BroadcastTx(tx types.Tx) (*ctypes.Receipt, error) {
+func (c *ClientJSON) BroadcastTx(tx types.Tx) (*ctypes.ResultBroadcastTx, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["BroadcastTx"],
@@ -644,23 +602,21 @@ func (c *ClientJSON) BroadcastTx(tx types.Tx) (*ctypes.Receipt, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.Receipt `json:"result"`
-		Error   string          `json:"error"`
-		Id      string          `json:"id"`
-		JSONRPC string          `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultBroadcastTx)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientJSON) Call(fromAddress []byte, toAddress []byte, data []byte) (*ctypes.ResponseCall, error) {
+func (c *ClientJSON) Call(fromAddress []byte, toAddress []byte, data []byte) (*ctypes.ResultCall, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["Call"],
@@ -671,23 +627,21 @@ func (c *ClientJSON) Call(fromAddress []byte, toAddress []byte, data []byte) (*c
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseCall `json:"result"`
-		Error   string               `json:"error"`
-		Id      string               `json:"id"`
-		JSONRPC string               `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultCall)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientJSON) CallCode(fromAddress []byte, code []byte, data []byte) (*ctypes.ResponseCall, error) {
+func (c *ClientJSON) CallCode(fromAddress []byte, code []byte, data []byte) (*ctypes.ResultCall, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["CallCode"],
@@ -698,23 +652,21 @@ func (c *ClientJSON) CallCode(fromAddress []byte, code []byte, data []byte) (*ct
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseCall `json:"result"`
-		Error   string               `json:"error"`
-		Id      string               `json:"id"`
-		JSONRPC string               `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultCall)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientJSON) DumpConsensusState() (*ctypes.ResponseDumpConsensusState, error) {
+func (c *ClientJSON) DumpConsensusState() (*ctypes.ResultDumpConsensusState, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["DumpConsensusState"],
@@ -725,23 +677,21 @@ func (c *ClientJSON) DumpConsensusState() (*ctypes.ResponseDumpConsensusState, e
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseDumpConsensusState `json:"result"`
-		Error   string                             `json:"error"`
-		Id      string                             `json:"id"`
-		JSONRPC string                             `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultDumpConsensusState)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientJSON) DumpStorage(address []byte) (*ctypes.ResponseDumpStorage, error) {
+func (c *ClientJSON) DumpStorage(address []byte) (*ctypes.ResultDumpStorage, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["DumpStorage"],
@@ -752,23 +702,21 @@ func (c *ClientJSON) DumpStorage(address []byte) (*ctypes.ResponseDumpStorage, e
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseDumpStorage `json:"result"`
-		Error   string                      `json:"error"`
-		Id      string                      `json:"id"`
-		JSONRPC string                      `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultDumpStorage)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientJSON) GenPrivAccount() (*acm.PrivAccount, error) {
+func (c *ClientJSON) GenPrivAccount() (*ctypes.ResultGenPrivAccount, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["GenPrivAccount"],
@@ -779,23 +727,21 @@ func (c *ClientJSON) GenPrivAccount() (*acm.PrivAccount, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *acm.PrivAccount `json:"result"`
-		Error   string           `json:"error"`
-		Id      string           `json:"id"`
-		JSONRPC string           `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultGenPrivAccount)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientJSON) Genesis() (*sm.GenesisDoc, error) {
+func (c *ClientJSON) Genesis() (*ctypes.ResultGenesis, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["Genesis"],
@@ -806,23 +752,21 @@ func (c *ClientJSON) Genesis() (*sm.GenesisDoc, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *sm.GenesisDoc `json:"result"`
-		Error   string         `json:"error"`
-		Id      string         `json:"id"`
-		JSONRPC string         `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultGenesis)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientJSON) GetAccount(address []byte) (*acm.Account, error) {
+func (c *ClientJSON) GetAccount(address []byte) (*ctypes.ResultGetAccount, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["GetAccount"],
@@ -833,23 +777,21 @@ func (c *ClientJSON) GetAccount(address []byte) (*acm.Account, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *acm.Account `json:"result"`
-		Error   string       `json:"error"`
-		Id      string       `json:"id"`
-		JSONRPC string       `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultGetAccount)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientJSON) GetBlock(height int) (*ctypes.ResponseGetBlock, error) {
+func (c *ClientJSON) GetBlock(height int) (*ctypes.ResultGetBlock, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["GetBlock"],
@@ -860,23 +802,21 @@ func (c *ClientJSON) GetBlock(height int) (*ctypes.ResponseGetBlock, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseGetBlock `json:"result"`
-		Error   string                   `json:"error"`
-		Id      string                   `json:"id"`
-		JSONRPC string                   `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultGetBlock)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientJSON) GetName(name string) (*types.NameRegEntry, error) {
+func (c *ClientJSON) GetName(name string) (*ctypes.ResultGetName, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["GetName"],
@@ -887,23 +827,21 @@ func (c *ClientJSON) GetName(name string) (*types.NameRegEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *types.NameRegEntry `json:"result"`
-		Error   string              `json:"error"`
-		Id      string              `json:"id"`
-		JSONRPC string              `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultGetName)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientJSON) GetStorage(address []byte, key []byte) (*ctypes.ResponseGetStorage, error) {
+func (c *ClientJSON) GetStorage(address []byte, key []byte) (*ctypes.ResultGetStorage, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["GetStorage"],
@@ -914,23 +852,21 @@ func (c *ClientJSON) GetStorage(address []byte, key []byte) (*ctypes.ResponseGet
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseGetStorage `json:"result"`
-		Error   string                     `json:"error"`
-		Id      string                     `json:"id"`
-		JSONRPC string                     `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultGetStorage)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientJSON) ListAccounts() (*ctypes.ResponseListAccounts, error) {
+func (c *ClientJSON) ListAccounts() (*ctypes.ResultListAccounts, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["ListAccounts"],
@@ -941,23 +877,21 @@ func (c *ClientJSON) ListAccounts() (*ctypes.ResponseListAccounts, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseListAccounts `json:"result"`
-		Error   string                       `json:"error"`
-		Id      string                       `json:"id"`
-		JSONRPC string                       `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultListAccounts)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientJSON) ListNames() (*ctypes.ResponseListNames, error) {
+func (c *ClientJSON) ListNames() (*ctypes.ResultListNames, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["ListNames"],
@@ -968,23 +902,21 @@ func (c *ClientJSON) ListNames() (*ctypes.ResponseListNames, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseListNames `json:"result"`
-		Error   string                    `json:"error"`
-		Id      string                    `json:"id"`
-		JSONRPC string                    `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultListNames)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientJSON) ListUnconfirmedTxs() ([]types.Tx, error) {
+func (c *ClientJSON) ListUnconfirmedTxs() (*ctypes.ResultListUnconfirmedTxs, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["ListUnconfirmedTxs"],
@@ -995,23 +927,21 @@ func (c *ClientJSON) ListUnconfirmedTxs() ([]types.Tx, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  []types.Tx `json:"result"`
-		Error   string     `json:"error"`
-		Id      string     `json:"id"`
-		JSONRPC string     `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultListUnconfirmedTxs)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientJSON) ListValidators() (*ctypes.ResponseListValidators, error) {
+func (c *ClientJSON) ListValidators() (*ctypes.ResultListValidators, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["ListValidators"],
@@ -1022,23 +952,21 @@ func (c *ClientJSON) ListValidators() (*ctypes.ResponseListValidators, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseListValidators `json:"result"`
-		Error   string                         `json:"error"`
-		Id      string                         `json:"id"`
-		JSONRPC string                         `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultListValidators)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientJSON) NetInfo() (*ctypes.ResponseNetInfo, error) {
+func (c *ClientJSON) NetInfo() (*ctypes.ResultNetInfo, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["NetInfo"],
@@ -1049,23 +977,21 @@ func (c *ClientJSON) NetInfo() (*ctypes.ResponseNetInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseNetInfo `json:"result"`
-		Error   string                  `json:"error"`
-		Id      string                  `json:"id"`
-		JSONRPC string                  `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultNetInfo)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientJSON) SignTx(tx types.Tx, privAccounts []*acm.PrivAccount) (types.Tx, error) {
+func (c *ClientJSON) SignTx(tx types.Tx, privAccounts []*acm.PrivAccount) (*ctypes.ResultSignTx, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["SignTx"],
@@ -1076,23 +1002,21 @@ func (c *ClientJSON) SignTx(tx types.Tx, privAccounts []*acm.PrivAccount) (types
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  types.Tx `json:"result"`
-		Error   string   `json:"error"`
-		Id      string   `json:"id"`
-		JSONRPC string   `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultSignTx)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }
 
-func (c *ClientJSON) Status() (*ctypes.ResponseStatus, error) {
+func (c *ClientJSON) Status() (*ctypes.ResultStatus, error) {
 	request := rpctypes.RPCRequest{
 		JSONRPC: "2.0",
 		Method:  reverseFuncMap["Status"],
@@ -1103,18 +1027,16 @@ func (c *ClientJSON) Status() (*ctypes.ResponseStatus, error) {
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result  *ctypes.ResponseStatus `json:"result"`
-		Error   string                 `json:"error"`
-		Id      string                 `json:"id"`
-		JSONRPC string                 `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
+	response, err := unmarshalCheckResponse(body)
 	if err != nil {
 		return nil, err
 	}
-	if response.Error != "" {
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.(*ctypes.ResultStatus)
+	if !ok {
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }

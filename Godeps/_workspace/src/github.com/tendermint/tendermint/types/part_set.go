@@ -15,13 +15,12 @@ import (
 )
 
 const (
-	partSize = 4096
+	partSize = 4096 // 4KB
 )
 
 var (
-	ErrPartSetUnexpectedIndex = // 4KB
-	errors.New("Error part set unexpected index")
-	ErrPartSetInvalidProof = errors.New("Error part set invalid proof")
+	ErrPartSetUnexpectedIndex = errors.New("Error part set unexpected index")
+	ErrPartSetInvalidProof    = errors.New("Error part set invalid proof")
 )
 
 type Part struct {

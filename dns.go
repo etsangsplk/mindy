@@ -1,13 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
-	"bytes"
 
 	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 )
@@ -22,22 +22,22 @@ type ResourceRecord struct {
 	Address string `json:"address"`
 }
 
-func (rr *ResourceRecord) Equals (r *ResourceRecord) bool{
+func (rr *ResourceRecord) Equals(r *ResourceRecord) bool {
 	return rr.Type == r.Type && rr.FQDN == r.FQDN && rr.Address == r.Address
 }
 
 // TODO: something better
-func RecordsEqual (r1 []*ResourceRecord, r2 []*ResourceRecord) bool{
-	
-	for _, rr1 := range r1{
+func RecordsEqual(r1 []*ResourceRecord, r2 []*ResourceRecord) bool {
+
+	for _, rr1 := range r1 {
 		eq := false
-		for _, rr2 := range r2{
-			if rr1.Equals(rr2){
+		for _, rr2 := range r2 {
+			if rr1.Equals(rr2) {
 				eq = true
 				break
 			}
 		}
-		if !eq{
+		if !eq {
 			return false
 		}
 	}
@@ -116,13 +116,13 @@ func validateDNSEntryRR(entry *types.NameRegEntry) ([]*ResourceRecord, error) {
 	rrl := []*ResourceRecord{}
 	if err := json.Unmarshal([]byte(entry.Data), &rrl); err != nil {
 		rr := new(ResourceRecord)
-		if err2 := json.Unmarshal([]byte(entry.Data), rr); err2 != nil{
+		if err2 := json.Unmarshal([]byte(entry.Data), rr); err2 != nil {
 			return nil, err
 		}
 		rrl = []*ResourceRecord{rr}
 	}
 
-	for _, rr := range rrl{
+	for _, rr := range rrl {
 		spl = strings.Split(rr.Address, ".")
 		if len(spl) != 4 {
 			return nil, fmt.Errorf("Address must be a valid ipv4 address. Got %s", rr.Address)
@@ -164,14 +164,14 @@ func fetchAndUpdateRecords() {
 	for _, chainRecord := range dnsRecords {
 		addedHost := false
 		// a single name may have multiple records
-		for _, record := range chainRecord{
+		for _, record := range chainRecord {
 			name, addr := record.FQDN, record.Address
 			switch record.Type {
 			case "NS":
 				fmt.Printf("adding NS record for %s:%s\n", name, addr)
 				buf.WriteString(fmt.Sprintf(".%s:%s:86400\n", name, addr))
 			case "A":
-				if !addedHost{
+				if !addedHost {
 					fmt.Printf("adding A record for %s:%s\n", name, addr)
 					buf.WriteString(fmt.Sprintf("=%s:%s:86400\n", name, addr))
 					addedHost = true
@@ -187,7 +187,7 @@ func fetchAndUpdateRecords() {
 		}
 	}
 
-	if err = ioutil.WriteFile("data", buf.Bytes(), 0644); err != nil{
+	if err = ioutil.WriteFile("data", buf.Bytes(), 0644); err != nil {
 		fmt.Println("Error writing data file")
 	}
 

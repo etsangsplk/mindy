@@ -1,14 +1,22 @@
-#! /bin/sh
+#! /bin/bash
 
 export PREFIX=mindy_test_
-cd $GOPATH/src/github.com/eris-ltd/mindy
-VC=./test UPDATE_EVERY=5 ./build.sh
 
-echo "###################### BUILD and RUN  the mindy test #########################"
+# build tinydns
+echo "###################### BUILD tinydns container #########################"
+cd $GOPATH/src/github.com/eris-ltd/mindy/tinydns
+docker build -t "${PREFIX}tinydns" .
+
+# build mindy
+echo "###################### BUILD mindy container #########################"
+cd $GOPATH/src/github.com/eris-ltd/mindy
+docker build -t "${PREFIX}mindy" .
+
+# build the test container
+echo "###################### BUILD mindy test container #########################"
 cd $GOPATH/src/github.com/eris-ltd/mindy
 docker build -t mindy_test -f test/Dockerfile .
-docker run --rm -t --link "${PREFIX}mint":mint --link "${PREFIX}tinydns":tiny --name mindy_test mindy_test
 
-echo "----------------------------------"
-echo "cleanup ..."
-docker rm -f "${PREFIX}mindy" "${PREFIX}tinydns" "${PREFIX}mint" "${PREFIX}mintdata"
+cd ./test
+bash run.sh
+

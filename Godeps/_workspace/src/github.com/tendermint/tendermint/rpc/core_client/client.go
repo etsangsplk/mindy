@@ -3,6 +3,7 @@ package core_client
 import (
 	"bytes"
 	"fmt"
+	ctypes "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core/types"
 	rpctypes "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/types"
 	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 	"io/ioutil"
@@ -75,6 +76,8 @@ func NewClient(addr, typ string) Client {
 		return &ClientHTTP{addr}
 	case "JSONRPC":
 		return &ClientJSON{addr}
+	default:
+		panic("Unknown client type " + typ + ". Select HTTP or JSONRPC")
 	}
 	return nil
 }
@@ -156,10 +159,21 @@ func argsToURLValues(argNames []string, args ...interface{}) (url.Values, error)
 	return values, nil
 }
 
+func unmarshalCheckResponse(body []byte) (response *ctypes.Response, err error) {
+	response = new(ctypes.Response)
+	wire.ReadJSON(response, body, &err)
+	if err != nil {
+		return nil, err
+	}
+	if response.Error != "" {
+		return nil, fmt.Errorf(response.Error)
+	}
+	return response, nil
+}
+
 // import statements we will need for the templates
 
 /*rpc-gen:imports:
-github.com/tendermint/tendermint/wire
 rpctypes github.com/tendermint/tendermint/rpc/types
 net/http
 io/ioutil
@@ -179,20 +193,18 @@ fmt
 	if err != nil{
 		return nil, err
 	}
-	var response struct {
-		Result {{response.0}} `json:"result"`
-		Error  string `json:"error"`
-		Id string `json:"id"`
-		JSONRPC string `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
-	if err != nil {
+	response, err := unmarshalCheckResponse(body)
+	if err != nil{
 		return nil, err
 	}
-	if response.Error != ""{
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.({{response.0}})
+	if !ok{
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }*/
 
 /*rpc-gen:template:*ClientHTTP func (c *ClientHTTP) {{name}}({{args.def}}) ({{response}}){
@@ -209,18 +221,16 @@ fmt
 	if err != nil {
 		return nil, err
 	}
-	var response struct {
-		Result {{response.0}} `json:"result"`
-		Error  string `json:"error"`
-		Id string `json:"id"`
-		JSONRPC string `json:"jsonrpc"`
-	}
-	wire.ReadJSON(&response, body, &err)
-	if err != nil {
+	response, err := unmarshalCheckResponse(body)
+	if err != nil{
 		return nil, err
 	}
-	if response.Error != ""{
-		return nil, fmt.Errorf(response.Error)
+	if response.Result == nil {
+		return nil, nil
 	}
-	return response.Result, nil
+	result, ok := response.Result.({{response.0}})
+	if !ok{
+		return nil, fmt.Errorf("response result was wrong type")
+	}
+	return result, nil
 }*/

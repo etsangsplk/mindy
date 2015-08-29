@@ -3,10 +3,11 @@ package account
 import (
 	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/ed25519"
 	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/ed25519/extra25519"
-	. "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/common" // PrivKey is part of PrivAccount and state.PrivValidator.
+	. "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
 )
 
+// PrivKey is part of PrivAccount and state.PrivValidator.
 type PrivKey interface {
 	Sign(msg []byte) Signature
 	PubKey() PubKey

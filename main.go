@@ -38,6 +38,13 @@ var (
 )
 
 func main() {
+	var versionCmd = &cobra.Command{
+		Use:   "version",
+		Short: "Display the mindy version",
+		Run: func(c *cobra.Command, args []string) {
+			fmt.Println("0.0.1")
+		},
+	}
 
 	var listNamesCmd = &cobra.Command{
 		Use:   "list",
@@ -66,7 +73,7 @@ func main() {
 	var rootCmd = &cobra.Command{Use: "mindy"}
 	rootCmd.Flags().StringVarP(&nodeAddrFlag, "node-addr", "a", DefaultNodeRPCAddr, "full address of rpc host")
 	rootCmd.PersistentPreRun = before
-	rootCmd.AddCommand(listNamesCmd, catchupCmd, runCmd)
+	rootCmd.AddCommand(listNamesCmd, catchupCmd, runCmd, versionCmd)
 	rootCmd.Execute()
 }
 

@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 # import the priv_validator and set vars
 ADDR=`mintkey eris /priv_validator.json`
@@ -27,20 +27,20 @@ mintx name --name interblock.io --data "$DATA" --amt 1000000 --fee 0 --sign --br
 
 DATA="{\"fqdn\":\"pinkpenguin.interblock.io\", \"address\":\"$IP\", \"type\":\"A\"}"
 echo $DATA
-mintx name --name pinkpgenuin.interblock.io --data "$DATA" --amt 100000 --fee 0  --sign --broadcast
+mintx name --name pinkpgenuin.interblock.io --data "$DATA" --amt 100000 --fee 0  --sign --broadcast --wait
 
-# let the block get mined and tinydns updated
-sleep 20
+# let tinydns get updated
+sleep 5
 
 A1=`dig +short @tiny interblock.io`
 echo $A1
-if [ $A1 != $IP ]; then
+if [ "$A1" != "$IP" ]; then
 	echo "Resolved wrong ip for interblock.io. Got $A1, expected $IP"
 	exit 1
 fi
 A2=`dig +short @tiny pinkpenguin.interblock.io`
 echo $A2
-if [ $A2 != $IP ]; then
+if [ "$A2" != "$IP" ]; then
 	echo "Resolved wrong ip for interblock.io. Got $A2, expected $IP"
 	exit 1
 fi

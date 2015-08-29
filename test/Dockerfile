@@ -10,7 +10,12 @@ RUN apt-get update && \
   rm -rf /var/lib/apt/lists/*
 
 # install client tools and eris-keys
-RUN go get github.com/eris-ltd/mint-client/...
+ENV REPO github.com/eris-ltd/mint-client 
+RUN git clone https://$REPO $GOPATH/src/$REPO
+WORKDIR $GOPATH/src/$REPO
+RUN git checkout develop
+RUN go install ./...
+
 RUN go get github.com/eris-ltd/eris-keys
 
 # copy in the priv_validator

@@ -5,11 +5,12 @@ import (
 	"errors"
 	"io"
 
+	"github.com/eris-ltd/mindy/Godeps/_workspace/src/golang.org/x/crypto/ripemd160"
+
 	acm "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	. "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	ptypes "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/permission/types"
 	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/wire"
-	"github.com/eris-ltd/mindy/Godeps/_workspace/src/golang.org/x/crypto/ripemd160"
 )
 
 var (
