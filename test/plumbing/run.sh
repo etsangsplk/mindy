@@ -5,7 +5,7 @@ if [ "$PREFIX" = "" ]; then
 fi
 
 cd $GOPATH/src/github.com/eris-ltd/mindy
-VC=./test 
+VC=./test/plumbing
 UPDATE_EVERY=5 
 
 # $PREFIX to allow namespacing instances of the app. Default is empty
@@ -34,5 +34,5 @@ docker run --rm -t --link "${PREFIX}mint":mint --link "${PREFIX}tinydns":tiny --
 
 echo "----------------------------------"
 echo "cleanup ..."
-#docker rm -f "${PREFIX}mindy" "${PREFIX}tinydns" "${PREFIX}mint" "${PREFIX}mintdata"
+docker rm -f "${PREFIX}mindy" "${PREFIX}tinydns" "${PREFIX}mint" "${PREFIX}mintdata"
 

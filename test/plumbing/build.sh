@@ -15,8 +15,8 @@ docker build -t "${PREFIX}mindy" .
 # build the test container
 echo "###################### BUILD mindy test container #########################"
 cd $GOPATH/src/github.com/eris-ltd/mindy
-docker build -t mindy_test -f test/Dockerfile .
+docker build -t mindy_test -f test/plumbing/Dockerfile .
 
-cd ./test
+cd ./test/plumbing
 bash run.sh
 
