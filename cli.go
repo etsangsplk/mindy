@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"time"
 	"os"
+	"time"
 
 	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/spf13/cobra"
 )
@@ -11,14 +11,21 @@ import (
 func cliListNames(cmd *cobra.Command, args []string) {
 	dnsEntries, err := getDNSRecords()
 	ifExit(err)
-	s, err := formatOutput(args, 1, dnsEntries)
-	ifExit(err)
-	fmt.Println(s)
+	// tendermint/wire can't handl maps so
+	// write them one at a time
+	var outputs []string
+	for _, d := range dnsEntries {
+		s, err := formatOutput(args, 1, d)
+		ifExit(err)
+		outputs = append(outputs, s)
+	}
+	for _, d := range outputs {
+		fmt.Println(d)
+	}
 }
 
 func cliCatchup(cobraCmd *cobra.Command, args []string) {
-	err := os.Chdir(DefaultTinyDNSDir)
-	ifExit(err)
+	ifExit(os.Chdir(DefaultTinyDNSDir))
 
 	fetchAndUpdateRecords()
 }

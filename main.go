@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/spf13/cobra"
 	"os"
 	"path"
 
+	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/spf13/cobra"
 	cclient "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core_client"
 )
 
@@ -71,7 +71,7 @@ func main() {
 	runCmd.Flags().IntVarP(&updateEveryFlag, "update-every", "u", 60, "number of seconds to wait before updating from chain")
 
 	var rootCmd = &cobra.Command{Use: "mindy"}
-	rootCmd.Flags().StringVarP(&nodeAddrFlag, "node-addr", "a", DefaultNodeRPCAddr, "full address of rpc host")
+	rootCmd.PersistentFlags().StringVarP(&nodeAddrFlag, "node-addr", "a", DefaultNodeRPCAddr, "full address of rpc host")
 	rootCmd.PersistentPreRun = before
 	rootCmd.AddCommand(listNamesCmd, catchupCmd, runCmd, versionCmd)
 	rootCmd.Execute()

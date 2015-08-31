@@ -3,11 +3,11 @@
 package tendermint_test
 
 import (
+	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/naoina/toml"
 	"os"
 	"path"
 	"strings"
 
-	"github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/naoina/toml"
 	. "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	cfg "github.com/eris-ltd/mindy/Godeps/_workspace/src/github.com/tendermint/tendermint/config"
 )
