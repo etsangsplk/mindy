@@ -19,10 +19,10 @@ RUN go install ./...
 RUN go get github.com/eris-ltd/eris-keys
 
 # copy in the priv_validator
-ADD ./test/plumbing/priv_validator.json /priv_validator.json
+ADD ./test/porcelain/priv_validator.json /priv_validator.json
 RUN chown $USER:$USER /priv_validator.json
 
-ADD ./test/plumbing/test.sh /test.sh
+ADD ./test/porcelain/test.sh /test.sh
 RUN chown $USER:$USER /test.sh
 
 # set user

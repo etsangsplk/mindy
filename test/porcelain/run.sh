@@ -7,9 +7,9 @@ if [ "$ROOT" = "" ]; then
 	ROOT=./test/porcelain
 fi
 
-
-
 eris chains new --dir $ROOT mindy_test
+
+eris chains plop mindy_test genesis
 
 # XXX: UPDATE_EVERY in the env
 eris services start mindy --chain=mindy_test --debug
@@ -21,6 +21,6 @@ docker run --rm -t --link eris_chain_mindy_test_1:mint --link eris_service_tinyd
 echo "----------------------------------"
 echo "cleanup ..."
 # eris services stop -rx mindy --chain=mindy_test ## TODO: fix
-docker rm -vf eris_service_tinydns_1 eris_service_mindy_1 eris_chain_mindy_test_1
+docker rm -vf eris_service_tinydns_1 eris_service_mindy_1 eris_chain_mindy_test_1 eris_service_keys_1 eris_data_keys_1
 eris data rm tinydns mindy_test
 

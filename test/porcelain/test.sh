@@ -23,11 +23,11 @@ echo ip "$IP"
 # register some dns entries
 DATA="[{\"fqdn\":\"interblock.io\", \"address\":\"$IP\", \"type\":\"NS\"}, {\"fqdn\":\"interblock.io\", \"address\":\"$IP\", \"type\":\"A\"}]"
 echo $DATA
-mintx name --name interblock.io --data "$DATA" --amt 1000000 --fee 0 --sign --broadcast
+mintx name --name=interblock.io --data="$DATA" --amt=1000000 --fee=0 --sign --broadcast
 
 DATA="{\"fqdn\":\"pinkpenguin.interblock.io\", \"address\":\"$IP\", \"type\":\"A\"}"
 echo $DATA
-mintx name --name pinkpgenuin.interblock.io --data "$DATA" --amt 100000 --fee 0  --sign --broadcast --wait
+mintx name --name=pinkpgenuin.interblock.io --data="$DATA" --amt=100000 --fee=0  --sign --broadcast --wait
 
 # let tinydns get updated
 sleep 10

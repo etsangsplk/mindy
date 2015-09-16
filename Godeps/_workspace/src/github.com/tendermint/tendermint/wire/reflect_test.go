@@ -94,8 +94,6 @@ type TestCase struct {
 	Validator
 }
 
-var now = time.Now()
-
 //-------------------------------------
 
 func constructBasic() interface{} {
@@ -103,7 +101,7 @@ func constructBasic() interface{} {
 		SimpleStruct{
 			String: "String",
 			Bytes:  []byte("Bytes"),
-			Time:   now,
+			Time:   time.Unix(123, 456789999),
 		},
 	}
 	return cat
@@ -121,9 +119,8 @@ func validateBasic(o interface{}, t *testing.T) {
 	if string(cat.Bytes) != "Bytes" {
 		t.Errorf("Expected cat.Bytes == 'Bytes', got %X", cat.Bytes)
 	}
-	// NOTE: stricter than Unix()!
-	if cat.Time.Nanosecond() != now.Nanosecond() {
-		t.Errorf("Expected cat.Time == %v, got %v", now, cat.Time)
+	if cat.Time.UnixNano() != 123456000000 { // Only milliseconds
+		t.Errorf("Expected cat.Time.UnixNano() == 123456000000, got %v", cat.Time.UnixNano())
 	}
 }
 

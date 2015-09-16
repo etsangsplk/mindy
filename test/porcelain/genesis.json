@@ -1,5 +1,4 @@
 {
-	"genesis_time": "Thu Jul 09 06:46:55.000000000 +0000 2015",
 	"chain_id": "mindy_test",
 	"params": {
 		"global_permissions": {
