@@ -1,8 +1,6 @@
 # Pull base image.
 FROM eris/base
 
-ENV DOCKERFILES ./DOCKER/linked
-
 # grab deps (gmp)
 RUN apt-get update && \
   apt-get install -y --no-install-recommends \
