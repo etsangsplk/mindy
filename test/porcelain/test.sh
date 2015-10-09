@@ -17,7 +17,7 @@ eris-keys server &
 sleep 2
 
 # get mint ip for dns registration
-IP=`cat /etc/hosts | grep mint | awk '{print \$1}'`
+IP=`cat /etc/hosts | grep mint | awk 'NR==1{print \$1}'` 
 echo ip "$IP"
 
 # register some dns entries

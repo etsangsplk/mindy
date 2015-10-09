@@ -1,6 +1,7 @@
 #! /bin/bash
+set -e
 
-export PREFIX=mindy_test_
+PREFIX=mindy_test_
 
 # build tinydns
 echo "###################### BUILD tinydns container #########################"
@@ -18,5 +19,5 @@ cd $GOPATH/src/github.com/eris-ltd/mindy
 docker build -t mindy_test -f test/plumbing/Dockerfile .
 
 cd ./test/plumbing
-bash run.sh
+PREFIX=$PREFIX bash run.sh
 

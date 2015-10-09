@@ -1,3 +1,5 @@
+[![Circle CI](https://circleci.com/gh/eris-ltd/mindy/tree/master.svg?style=svg)](https://circleci.com/gh/eris-ltd/mindy)
+
 # mindy
 
 Mindy extends djb's tinydns by updating the zone file with records fetched from a blockchain 
