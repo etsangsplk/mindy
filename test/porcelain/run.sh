@@ -1,17 +1,23 @@
 #! /bin/bash
 
-cd $GOPATH/src/github.com/eris-ltd/mindy
+ERIS_PULL_APPROVE=true
 UPDATE_EVERY=5 
+ROOT=$GOPATH/src/github.com/eris-ltd/mindy/test/porcelain
 
-if [ "$ROOT" = "" ]; then
-	ROOT=./test/porcelain
-fi
+# init the eris cli
+yes | eris init
+# because wtf
+yes | eris init
 
+cd $GOPATH/src/github.com/eris-ltd/mindy
+
+# create new blockchain with files in $ROOT
 eris chains new --dir $ROOT mindy_test
 
+# cat the new chains genesis 
 eris chains plop mindy_test genesis
 
-# XXX: UPDATE_EVERY in the env
+# TODO: UPDATE_EVERY in the env
 eris services start mindy --chain=mindy_test --debug
 
 
