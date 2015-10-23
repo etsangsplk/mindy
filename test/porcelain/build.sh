@@ -19,7 +19,10 @@ echo "###################### BUILD mindy test container ########################
 cd $GOPATH/src/$REPO
 docker build -t mindy_test -f $ROOT/Dockerfile .
 
-cd $GOPATH/src/$REPO
+# eris container in which we run the tests
+docker run --name eris-data eris/data echo "Data-container for testing with eris-cli"
+docker cp $GOPATH/src/$REPO/ eris-data:/home/eris/.eris/mindy/
 
-# eris/eris container in which we run the tests
-docker run -it --rm -v $GOPATH/src/$REPO:/go/src/$REPO -v /var/run/docker.sock:/var/run/docker.sock --entrypoint bash quay.io/eris/eris /go/src/$REPO/test/porcelain/run.sh
+docker run -it --rm -v /var/run/docker.sock:/var/run/docker.sock --volumes-from eris-data --entrypoint bash quay.io/eris/eris /home/eris/.eris/mindy/test/porcelain/run.sh
+
+docker rm -vf eris-data

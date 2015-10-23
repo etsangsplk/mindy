@@ -2,6 +2,9 @@ machine:
   environment:
     GOPATH: /home/ubuntu/.go_workspace
     REPO: ${GOPATH}/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}
+    BUILD_SCRIPT: test/porcelain/build.sh
+    INTEGRATION_TESTS_PATH: $HOME/integration-tests
+    INTEGRATION_TESTS_BRANCH: staging
   post:
     - echo "GOPATH $GOPATH and REPO $REPO"
     - rm -rf $REPO
@@ -21,4 +24,5 @@ dependencies:
 test:
   override:
     - go test ./...
-    - curl https://raw.githubusercontent.com/eris-ltd/integration-tests/master/test.sh > $HOME/test.sh && bash $HOME/test.sh $REPO/test/plumbing
+    - git clone https://github.com/eris-ltd/integration-tests $INTEGRATION_TESTS_PATH
+    - bash $INTEGRATION_TESTS_PATH/test.sh
