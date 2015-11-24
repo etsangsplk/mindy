@@ -20,11 +20,9 @@ UPDATE_EVERY=5
 
 # run tendermint (with data container)
 docker run --name "${PREFIX}mintdata" eris/mint mkdir -p /home/eris/.eris/blockchains/tendermint
-if [ "$VC" != "" ]; then
-	echo "copy data into eris/mint container"
-	cd $VC
-	tar cf - . | docker run -i --rm --volumes-from "${PREFIX}mintdata" --user eris eris/mint tar xvf - -C /home/eris/.eris/blockchains/tendermint
-fi
+echo "copy data into eris/mint container"
+cd $VC
+tar cf - . | docker run -i --rm --volumes-from "${PREFIX}mintdata" --user eris eris/mint tar xvf - -C /home/eris/.eris/blockchains/tendermint
 echo "###################### RUN eris/mint container #########################"
 docker run --name "${PREFIX}mint" --volumes-from "${PREFIX}mintdata" -d -p 46657:46657 -e FAST_SYNC=$FAST_SYNC eris/mint
 ifExit "could not start eris/mint container"

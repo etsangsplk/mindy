@@ -1,18 +1,14 @@
 #! /bin/bash
 
 ERIS_PULL_APPROVE=true
+ERIS_MIGRATE_APPROVE=true
 UPDATE_EVERY=5 
-ROOT=$GOPATH/src/github.com/eris-ltd/mindy/test/porcelain
+ROOT=/home/eris/.eris/mindy/test/porcelain
 
 # init the eris cli
 yes | eris init
 # because wtf
 yes | eris init
-
-# because how else do we get the repo to the right spot when `-v` is so impossible to use
-cp -r /home/eris/.eris/mindy /go/src/github.com/eris-ltd/mindy
-
-cd $GOPATH/src/github.com/eris-ltd/mindy
 
 # create new blockchain with files in $ROOT
 eris chains new --dir $ROOT mindy_test

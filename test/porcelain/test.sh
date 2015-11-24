@@ -3,8 +3,6 @@
 # import the priv_validator and set vars
 ADDR=`mintkey eris /priv_validator.json`
 echo addr $ADDR
-export MINTX_PUBKEY=`eris-keys pub --addr $ADDR`
-echo pub $MINTX_PUBKEY
 export MINTX_NODE_ADDR="http://mint:46657/"
 export MINTX_SIGN_ADDR="http://localhost:4767"
 export MINTX_CHAINID=mindy_test
@@ -15,6 +13,9 @@ eris-keys server &
 
 # let the daemon start
 sleep 2
+
+export MINTX_PUBKEY=`eris-keys pub --addr $ADDR`
+echo pub $MINTX_PUBKEY
 
 # get mint ip for dns registration
 IP=`cat /etc/hosts | grep mint | awk 'NR==1{print \$1}'` 
