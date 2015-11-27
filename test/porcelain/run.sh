@@ -1,8 +1,8 @@
 #! /bin/bash
 
-ERIS_PULL_APPROVE=true
-ERIS_MIGRATE_APPROVE=true
-UPDATE_EVERY=5 
+export ERIS_PULL_APPROVE="true"
+export ERIS_MIGRATE_APPROVE="true"
+export UPDATE_EVERY=5 
 ROOT=/home/eris/.eris/mindy/test/porcelain
 
 # init the eris cli
