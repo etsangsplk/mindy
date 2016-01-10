@@ -24,7 +24,7 @@ echo "copy data into eris/mint container"
 cd $VC
 tar cf - . | docker run -i --rm --volumes-from "${PREFIX}mintdata" --user eris quay.io/eris/mint tar xvf - -C /home/eris/.eris/blockchains/tendermint
 echo "###################### RUN eris/mint container #########################"
-docker run --name "${PREFIX}mint" --volumes-from "${PREFIX}mintdata" -d -p 46657:46657 -e FAST_SYNC=$FAST_SYNC eris/mint
+docker run --name "${PREFIX}mint" --volumes-from "${PREFIX}mintdata" -d -p 46657:46657 -e FAST_SYNC=$FAST_SYNC quay.io/eris/mint
 ifExit "could not start eris/mint container"
 
 # run tinydns
