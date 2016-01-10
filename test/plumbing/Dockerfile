@@ -13,7 +13,7 @@ RUN apt-get update && \
 ENV REPO github.com/eris-ltd/mint-client 
 RUN git clone https://$REPO $GOPATH/src/$REPO
 WORKDIR $GOPATH/src/$REPO
-RUN git checkout develop
+RUN git checkout staging
 RUN go install ./...
 
 RUN go get github.com/eris-ltd/eris-keys
