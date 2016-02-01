@@ -6,9 +6,9 @@ export UPDATE_EVERY=5
 ROOT=/home/eris/.eris/mindy/test/porcelain
 
 # init the eris cli
-yes | eris init
+eris init --yes --testing=true
 # because wtf
-yes | eris init
+#eris init
 
 # create new blockchain with files in $ROOT
 eris chains new --dir $ROOT mindy_test
