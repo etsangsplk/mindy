@@ -7,8 +7,6 @@ ROOT=/home/eris/.eris/mindy/test/porcelain
 
 # init the eris cli
 eris init --yes --testing=true
-# because wtf
-#eris init
 
 # create new blockchain with files in $ROOT
 eris chains new --dir $ROOT mindy_test
@@ -17,8 +15,7 @@ eris chains new --dir $ROOT mindy_test
 eris chains plop mindy_test genesis
 
 # TODO: UPDATE_EVERY in the env
-eris services start mindy --chain=mindy_test --debug
-
+eris services start mindy --chain=mindy_test --debug --publish
 
 echo "###################### RUN the mindy test #########################"
 docker run --rm -t --link eris_chain_mindy_test_1:mint --link eris_service_tinydns_1:tiny --name mindy_test mindy_test
