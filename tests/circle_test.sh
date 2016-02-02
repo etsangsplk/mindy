@@ -28,7 +28,7 @@ start=`pwd`
 # ----------------------------------------------------------
 # Get machine sorted
 
-echo "Setting up a Machine for EPM Testing"
+echo "Setting up a Machine for Mindy Testing"
 docker-machine create --driver amazonec2 $machine 1>/dev/null
 eval $(docker-machine env $machine)
 echo "Machine setup."
