@@ -153,7 +153,7 @@ perform_tests(){
   fi
   echo
 
-  sleep 10 # let tinydns get updated
+  sleep 15 # let tinydns get updated
 
   if [ $ci = true ]
   then
