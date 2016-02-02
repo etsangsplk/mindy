@@ -155,15 +155,31 @@ perform_tests(){
 
   sleep 10 # let tinydns get updated
 
+  if [ $ci = true ]
+  then
+    tiny=$(docker-machine ip $(docker-machine active))
+    port=$(eris services inspect tinydns NetworkSettings.Ports | cut -d ' ' -f 4 | sed 's/[^0-9]*//g')
+  fi
+
   # check
-  A1=`dig +short @$tiny interblock.io`
+  if [ $ci = true ]
+  then
+    A1=`dig +short @$tiny -p $port interblock.io`
+  else
+    A1=`dig +short @$tiny interblock.io`
+  fi
   echo -e "First record =>\t\t\t\t$A1"
   if [ "$A1" != "$IP" ]; then
     echo "Resolved wrong ip for interblock.io. Got $A1, expected $IP"
     test_exit=1
     return 1
   fi
-  A2=`dig +short @$tiny pinkpenguin.interblock.io`
+  if [ $ci = true ]
+  then
+    A2=`dig +short @$tiny -p $port pinkpenguin.interblock.io`
+  else
+    A2=`dig +short @$tiny pinkpenguin.interblock.io`
+  fi
   echo -e "Second record =>\t\t\t$A2"
   if [ "$A2" != "$IP" ]; then
     echo "Resolved wrong ip for interblock.io. Got $A2, expected $IP"
