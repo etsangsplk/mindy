@@ -22,10 +22,9 @@
 
 name=mindy
 base=github.com/eris-ltd/$name
-repo=$GOPATH/src/$base
+repo=`pwd`
 if [ "$CIRCLE_BRANCH" ]
 then
-  repo=${GOPATH%%:*}/src/$base
   ci=true
   linux=true
 elif [ "$TRAVIS_BRANCH" ]
@@ -37,6 +36,7 @@ then
   ci=true
   win=true
 else
+  repo=$GOPATH/src/$base
   ci=false
 fi
 
