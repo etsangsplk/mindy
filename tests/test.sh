@@ -119,6 +119,7 @@ test_setup(){
 
 perform_tests(){
   echo
+  eris services start tinydns --publish
   eris services start mindy --chain=$chain_name
   if [ $? -ne 0 ]
   then
