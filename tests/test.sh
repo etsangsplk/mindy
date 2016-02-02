@@ -184,6 +184,9 @@ test_teardown(){
     fi
     rm -rf $HOME/.eris/scratch/data/mindy-tests-*
     rm -rf $chain_dir
+  else
+    eris services stop -f mindy 1>/dev/null
+    eris chains stop -f $chain_name 1>/dev/null
   fi
   echo
   if [ "$test_exit" -eq 0 ]
