@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	DefaultNodeRPCHost = "mint" // expect to be docker linked
+	DefaultNodeRPCHost = "chain" // expect to be docker linked
 	DefaultNodeRPCPort = "46657"
 	DefaultNodeRPCAddr = "http://" + DefaultNodeRPCHost + ":" + DefaultNodeRPCPort
 
